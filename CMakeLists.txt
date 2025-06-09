@@ -7,4 +7,9 @@ add_executable(pascal_compilador main.cpp
         src/tokens/token.h
         src/tokens/token.cpp
         src/scanner/scanner.h
-        src/scanner/scanner.cpp)
+        src/scanner/scanner.cpp
+        src/ast/exp.h
+        src/visitors/visitor.h
+        src/ast/stmt.h
+        src/ast/program.h
+        src/ast/exp.cpp)

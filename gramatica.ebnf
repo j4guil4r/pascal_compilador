@@ -1,0 +1,39 @@
+program          : 'program' ID ';' block '.'
+block            : [declaration_section] compound_statement
+declaration_section : [var_section] (function_declaration)*
+var_section      : 'var' var_declaration+
+var_declaration  : identifier_list ':' type ';'
+identifier_list  : ID (',' ID)*
+type             : 'integer' | 'longint' | 'unsignedint' | 'void'
+function_declaration : 'function' ID [formal_parameters] ':' type ';' block ';'
+formal_parameters : '(' param_section (';' param_section)* ')'
+param_section    : identifier_list ':' type
+compound_statement : 'begin' statement_sequence 'end'
+statement_sequence : statement (';' statement)*
+statement        : assignment
+                 | if_statement
+                 | while_statement
+                 | for_statement
+                 | function_call ';'
+                 | print_statement
+                 | compound_statement
+assignment       : ID ':=' expression
+print_statement  : 'writeln' '(' [expression_list] ')' ';'  /* Ej: writeln(x); */
+if_statement     : 'if' expression 'then' statement ['else' statement]
+while_statement  : 'while' expression 'do' statement
+for_statement    : 'for' ID ':=' expression ('to' | 'downto') expression 'do' statement
+function_call    : ID [ '(' [expression_list] ')' ]
+expression_list  : expression (',' expression)*
+expression       : simple_expression [relational_operator simple_expression]
+simple_expression: term (addition_operator term)*
+term             : factor (multiplication_operator factor)*
+factor           : INT_CONST
+                 | ID
+                 | '(' expression ')'
+                 | 'not' factor
+                 | '-' factor
+                 | function_call
+
+addition_operator: '+' | '-' | 'or'
+multiplication_operator : '*' | 'div' | 'mod' | 'and'
+relational_operator  : '=' | '<>' | '<' | '<=' | '>' | '>='
