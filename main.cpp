@@ -1,25 +1,61 @@
 #include <iostream>
+#include <fstream>
+#include <string>
+#include "./src/scanner/scanner.h"
 
-// TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-int main() {
-    // TIP Press <shortcut actionId="RenameElement"/> when your caret is at the
-    // <b>lang</b> variable name to see how CLion can help you rename it.
-    auto lang = "C++";
-    std::cout << "Hello and welcome to " << lang << "!\n";
 
-    for (int i = 1; i <= 5; i++) {
-        // TIP Press <shortcut actionId="Debug"/> to start debugging your code.
-        // We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/>
-        // breakpoint for you, but you can always add more by pressing
-        // <shortcut actionId="ToggleLineBreakpoint"/>.
-        std::cout << "i = " << i << std::endl;
+using namespace std;
+
+int main(int argc, const char* argv[]) {
+    if (argc != 2) {
+        cout << "Numero incorrecto de argumentos. Uso: " << argv[0] << " <archivo_de_entrada>" << endl;
+        exit(1);
     }
+
+    ifstream infile(argv[1]);
+    if (!infile.is_open()) {
+        cout << "No se pudo abrir el archivo: " << argv[1] << endl;
+        exit(1);
+    }
+
+    string input;
+    string line;
+    while (getline(infile, line)) {
+        input += line + '\n';
+    }
+    infile.close();
+
+    Scanner scanner(input.c_str());
+
+    string input_copy = input;
+    Scanner scanner_test(input_copy.c_str());
+    test_scanner(&scanner_test);
+    cout << "Scanner exitoso" << endl;
+    cout << endl;
+    cout << "Iniciando parsing:" << endl;
+    /*
+    Parser parser(&scanner);
+    try {
+        Program* program = parser.parseProgram();
+        cout << "Parsing exitoso" << endl << endl;
+        cout << "Iniciando Visitor:" << endl;
+        PrintVisitor printVisitor;
+        EVALVisitor evalVisitor;
+        TypeVisitor typeVisitor;
+        cout << "VERIFICANDO:" << endl;
+        typeVisitor.check(program);
+        cout << endl;
+        cout << "IMPRIMIR:" << endl;
+        printVisitor.imprimir(program);
+        cout  << endl;
+        cout << "EJECUTAR:" << endl;
+        evalVisitor.ejecutar(program);
+        delete program;
+    } catch (const exception& e) {
+        cout << "Error durante la ejecución: " << e.what() << endl;
+        return 1;
+    }
+     */
 
     return 0;
 }
-
-// TIP See CLion help at <a
-// href="https://www.jetbrains.com/help/clion/">jetbrains.com/help/clion/</a>.
-//  Also, you can try interactive lessons for CLion by selecting
-//  'Help | Learn IDE Features' from the main menu.
