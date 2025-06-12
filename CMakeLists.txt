@@ -12,4 +12,6 @@ add_executable(pascal_compilador main.cpp
         src/visitors/visitor.h
         src/ast/stmt.h
         src/ast/program.h
-        src/ast/exp.cpp)
+        src/ast/exp.cpp
+        src/ast/stmt.cpp
+        src/enviroment/enviroment.h)

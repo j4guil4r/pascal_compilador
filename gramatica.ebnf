@@ -1,13 +1,12 @@
 program          : 'program' ID ';' block '.'
 block            : [declaration_section] compound_statement
 declaration_section : [var_section] (function_declaration)*
-var_section      : 'var' var_declaration+
-var_declaration  : identifier_list ':' type ';'
+var_section      : 'var' (var_declaration ';')+
+var_declaration  : identifier_list ':' type
 identifier_list  : ID (',' ID)*
 type             : 'integer' | 'longint' | 'unsignedint' | 'void'
 function_declaration : 'function' ID [formal_parameters] ':' type ';' block ';'
-formal_parameters : '(' param_section (';' param_section)* ')'
-param_section    : identifier_list ':' type
+formal_parameters : '(' var_declaration (';' var_declaration)* ')'
 compound_statement : 'begin' statement_sequence 'end'
 statement_sequence : statement (';' statement)*
 statement        : assignment
@@ -27,8 +26,7 @@ expression_list  : expression (',' expression)*
 expression       : simple_expression [relational_operator simple_expression]
 simple_expression: term (addition_operator term)*
 term             : factor (multiplication_operator factor)*
-factor           : INT_CONST
-                 | ID
+factor           : ID
                  | '(' expression ')'
                  | 'not' factor
                  | '-' factor

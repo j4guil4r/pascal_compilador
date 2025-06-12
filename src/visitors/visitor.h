@@ -9,8 +9,7 @@
 #include <list>
 
 class Program;
-class Block;
-class VarDeclaration;
+class BlockStmt;
 class FunctionDeclaration;
 class AssignStmt;
 class PrintStmt;
@@ -22,6 +21,9 @@ class UnaryExp;
 class NumberExp;
 class IdentifierExp;
 class FunctionCallExp;
+class VarDec;
+class VarDecList;
+class StatementList;
 
 class Visitor {
 public:
@@ -29,10 +31,14 @@ public:
     virtual void visit(Program* program) = 0;
 
     // Bloques
-    virtual void visit(Block* block) = 0;
+    virtual void visit(BlockStmt* block) = 0;
+    virtual void visit(StatementList* StatementList) = 0;
 
     // Declaraciones
-    virtual void visit(VarDeclaration* varDec) = 0;
+    virtual void visit(VarDec* varDec) = 0;
+    virtual void visit(VarDecList* varDecList) = 0;
+
+    //Funcion
     virtual void visit(FunctionDeclaration* funcDec) = 0;
 
     // Sentencias
@@ -53,7 +59,7 @@ public:
 class PrintVisitor : public Visitor {
 public:
     void imprimir(Program* program);
-    void visit(Block* block) override;
+    void visit(BlockStmt* block) override;
 
 
 };
