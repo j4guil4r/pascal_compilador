@@ -47,6 +47,18 @@ public:
     void accept(Visitor* visitor);
 };
 
+class ProceDec {
+public:
+    std::string nombre;
+    std::string returnType;
+    std::list<std::string> parametros;
+    std::list<std::string> tipos;
+    BlockStmt* cuerpo;
+    ProceDec(std::string nombre,std::string returnType,BlockStmt* cuerpo);
+    ~ProceDec();
+    void accept(Visitor* visitor);
+};
+
 class FunDecList{
 public:
     std::list<FunDec*> Fundecs;

@@ -26,6 +26,7 @@ class VarDec;
 class VarDecList;
 class StatementList;
 class ProcedureCall;
+class ProceDec;
 
 class Visitor {
 public:

@@ -3,6 +3,7 @@
 
 #include "../scanner/scanner.h"
 #include "../ast/program.h"
+using namespace std;
 
 class Parser {
 private:
@@ -12,6 +13,21 @@ private:
     bool check(Token::Type ttype);
     bool advance();
     bool isAtEnd();
+    Exp* parseCExp();
+    Exp* parseExpression();
+    Exp* parseTerm();
+    Exp* parseFactor();
+    Program* parseProgram();
+    Stmt* parseStatement();
+    StatementList* parseStatementList();
+    VarDec* parseVarDec();
+    VarDecList* parseVarDecList();
+    BlockStmt* parseBody();
+    FunDec* parseFunDec();
+    FunctionCallExp* parsefuncall();
+    FunDecList* parseFunDecList();
+    ProceDec* parseProceDec();
+    ProcedureCall* parseProcedureCall();
 public:
-
+    Parser(Scanner* scanner);
 };
