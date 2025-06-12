@@ -10,7 +10,8 @@
 
 class Program;
 class BlockStmt;
-class FunctionDeclaration;
+class FunDec;
+class FunDecList;
 class AssignStmt;
 class PrintStmt;
 class IfStmt;
@@ -24,6 +25,7 @@ class FunctionCallExp;
 class VarDec;
 class VarDecList;
 class StatementList;
+class ProcedureCall;
 
 class Visitor {
 public:
@@ -39,7 +41,8 @@ public:
     virtual void visit(VarDecList* varDecList) = 0;
 
     //Funcion
-    virtual void visit(FunctionDeclaration* funcDec) = 0;
+    virtual void visit(FunDec* funcDec) = 0;
+    virtual void visit(FunDecList* funcDecList) = 0;
 
     // Sentencias
     virtual void visit(AssignStmt* assign) = 0;
@@ -47,6 +50,7 @@ public:
     virtual void visit(IfStmt* ifStmt) = 0;
     virtual void visit(WhileStmt* whileStmt) = 0;
     virtual void visit(ForStmt* forStmt) = 0;
+    virtual void visit(ProcedureCall* Procedurecall) = 0;
 
     // Expresiones
     virtual int visit(BinaryExp* binary) = 0;

@@ -3,49 +3,6 @@
 // Stmt
 Stmt::~Stmt() {}
 
-// VarDec
-VarDec::VarDec(std::string type, std::list<std::string> vars)
-    : type(type), vars(vars) {}
-
-void VarDec::accept(Visitor* visitor) {
-    return visitor->visit(this);
-}
-
-VarDec::~VarDec() {}
-
-// VarDecList
-VarDecList::VarDecList() {}
-
-void VarDecList::add(VarDec* vardec) {
-    vardecs.push_back(vardec);
-}
-
-void VarDecList::accept(Visitor* visitor) {
-    visitor->visit(this);
-}
-
-VarDecList::~VarDecList() {
-    for (auto v : vardecs) {
-        delete v;
-    }
-}
-
-// FunctionDeclaration
-FunctionDeclaration::FunctionDeclaration(const std::string& name,
-                                         const std::string& returnType,
-                                         std::list<Stmt*>& body)
-    : name(name), returnType(returnType), body(body) {}
-
-void FunctionDeclaration::accept(Visitor* visitor) {
-    visitor->visit(this);
-}
-
-FunctionDeclaration::~FunctionDeclaration() {
-    for (auto stmt : body) {
-        delete stmt;
-    }
-}
-
 // AssignStmt
 AssignStmt::AssignStmt(const std::string& name, Exp* e)
     : varName(name), expr(e) {}
@@ -112,6 +69,15 @@ ForStmt::~ForStmt() {
     delete body;
 }
 
+//ProcedureCall
+ProcedureCall ::ProcedureCall (const std::string& name, std::list<Exp*> args)
+        : funcName(name), args(args) {}
+
+ProcedureCall ::~ProcedureCall () {
+    for (auto arg : args) delete arg;
+}
+void ProcedureCall ::accept(Visitor* visitor) { return visitor->visit(this); }
+
 // StatementList
 StatementList::StatementList() {}
 
@@ -129,23 +95,3 @@ StatementList::~StatementList() {
     }
 }
 
-// BlockStmt
-BlockStmt::BlockStmt(VarDecList* vardecs, StatementList* stms)
-    : vardecs(vardecs), slist(stms) {}
-
-void BlockStmt::accept(Visitor* visitor) {
-    visitor->visit(this);
-}
-
-BlockStmt::~BlockStmt() {
-    delete vardecs;
-    delete slist;
-}
-
-// Program
-Program::Program(BlockStmt* body)
-    : body(body) {}
-
-Program::~Program() {
-    delete body;
-}
