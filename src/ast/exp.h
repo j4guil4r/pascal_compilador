@@ -61,5 +61,14 @@ public:
     ~FunctionCallExp();
 };
 
+class ExpList {
+    public:
+    std::list<Exp*> exps;
+    ExpList();
+    void add(Exp* stm);
+    void accept(Visitor* visitor);
+    ~ExpList();
+};
+
 
 #endif //PASCAL_COMPILADOR_EXP_H

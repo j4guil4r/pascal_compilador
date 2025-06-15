@@ -26,6 +26,7 @@ class VarDec;
 class VarDecList;
 class StatementList;
 class ProcedureCall;
+class ExpList;
 
 class Visitor {
 public:
@@ -58,6 +59,7 @@ public:
     virtual int visit(NumberExp* number) = 0;
     virtual int visit(IdentifierExp* id) = 0;
     virtual int visit(FunctionCallExp* funcCall) = 0;
+    virtual int visit(ExpList* explist) = 0;
 };
 
 class PrintVisitor : public Visitor {

@@ -10,6 +10,7 @@ public:
     virtual ~Stmt() = 0;
     virtual void accept(Visitor* visitor) = 0;
 };
+class StatementList;
 
 class AssignStmt : public Stmt {
 public:
@@ -22,8 +23,8 @@ public:
 
 class PrintStmt : public Stmt {
 public:
-    std::list<Exp*> expressions;
-    PrintStmt(const std::list<Exp*>& exprs);
+    ExpList* expressions;
+    PrintStmt(ExpList* exps);
     void accept(Visitor* visitor) override;
     ~PrintStmt();
 };
@@ -31,9 +32,9 @@ public:
 class IfStmt : public Stmt {
 public:
     Exp* condition;
-    Stmt* thenBlock;
-    Stmt* elseBlock;
-    IfStmt(Exp* cond, Stmt* then, Stmt* elseStmt = nullptr);
+    StatementList* thenBlock;
+    StatementList* elseBlock;
+    IfStmt(Exp* cond, StatementList* then, StatementList* elseStmt);
     void accept(Visitor* visitor) override;
     ~IfStmt();
 };
@@ -41,8 +42,8 @@ public:
 class WhileStmt : public Stmt {
 public:
     Exp* condition;
-    Stmt* body;
-    WhileStmt(Exp* cond, Stmt* body);
+    StatementList* body;
+    WhileStmt(Exp* cond, StatementList* body);
     void accept(Visitor* visitor) override;
     ~WhileStmt();
 };
@@ -53,8 +54,8 @@ public:
     Exp* startValue;
     Exp* endValue;
     bool isDownto;
-    BlockStmt* body;
-    ForStmt(std::string varName,Exp* startValue,Exp* endValue,bool isDownto,BlockStmt* body);
+    StatementList* body;
+    ForStmt(std::string varName,Exp* startValue,Exp* endValue,bool isDownto,StatementList* body);
     void accept(Visitor* visitor) override;
     ~ForStmt();
 };
@@ -62,13 +63,14 @@ public:
 class ProcedureCall : public Stmt {
 public:
     std::string funcName;
-    std::list<Exp*> args;
-    ProcedureCall(const std::string& name, std::list<Exp*> args);
+    ExpList* args;
+    ProcedureCall(std::string funcName);
+    ProcedureCall(const std::string& name, ExpList* args);
     void accept(Visitor* visitor) override;
     ~ProcedureCall();
 };
 
-class StatementList {
+class StatementList : public Stmt{
 public:
     std::list<Stmt*> stms;
     StatementList();

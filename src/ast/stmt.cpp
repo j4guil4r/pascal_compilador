@@ -16,21 +16,18 @@ AssignStmt::~AssignStmt() {
 }
 
 // PrintStmt
-PrintStmt::PrintStmt(const std::list<Exp*>& exprs)
-    : expressions(exprs) {}
+PrintStmt::PrintStmt(ExpList* exprs): expressions(exprs) {}
 
 void PrintStmt::accept(Visitor* visitor) {
     visitor->visit(this);
 }
 
 PrintStmt::~PrintStmt() {
-    for (auto e : expressions) {
-        delete e;
-    }
+    delete expressions;
 }
 
 // IfStmt
-IfStmt::IfStmt(Exp* cond, Stmt* then, Stmt* elseStmt)
+IfStmt::IfStmt(Exp* cond, StatementList* then, StatementList* elseStmt)
     : condition(cond), thenBlock(then), elseBlock(elseStmt) {}
 
 void IfStmt::accept(Visitor* visitor) {
@@ -44,7 +41,7 @@ IfStmt::~IfStmt() {
 }
 
 // WhileStmt
-WhileStmt::WhileStmt(Exp* cond, Stmt* body)
+WhileStmt::WhileStmt(Exp* cond, StatementList* body)
     : condition(cond), body(body) {}
 
 void WhileStmt::accept(Visitor* visitor) {
@@ -57,7 +54,7 @@ WhileStmt::~WhileStmt() {
 }
 
 // ForStmt
-ForStmt::ForStmt(std::string varName,Exp* startValue,Exp* endValue,bool isDownto,BlockStmt* body) : startValue(startValue), endValue(endValue), isDownto(isDownto), body(body) {}
+ForStmt::ForStmt(std::string varName,Exp* startValue,Exp* endValue,bool isDownto,StatementList* body) : startValue(startValue), endValue(endValue), isDownto(isDownto), body(body) {}
 
 void ForStmt::accept(Visitor* visitor) {
     visitor->visit(this);
@@ -70,11 +67,11 @@ ForStmt::~ForStmt() {
 }
 
 //ProcedureCall
-ProcedureCall ::ProcedureCall (const std::string& name, std::list<Exp*> args)
-        : funcName(name), args(args) {}
+ProcedureCall ::ProcedureCall(std::string funcName):funcName(funcName){}
+ProcedureCall ::ProcedureCall (const std::string& name, ExpList* args): funcName(name), args(args) {}
 
 ProcedureCall ::~ProcedureCall () {
-    for (auto arg : args) delete arg;
+    delete args;
 }
 void ProcedureCall ::accept(Visitor* visitor) { return visitor->visit(this); }
 

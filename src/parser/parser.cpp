@@ -70,6 +70,26 @@ Program* Parser::parseProgram() {
     return p;
 }
 
+BlockStmt* Parser::parseBody() {
+    VarDecList* vdl = parseVarDecList();
+    FunList* funlist = parseFunDecList();
+    StatementList* sl = parseStatementList();
+    return new BlockStmt(vdl,funlist, sl);
+}
+
+VarDecList* Parser::parseVarDecList() {
+    VarDecList* vdl = new VarDecList();
+    if (match(Token::VAR)) {
+        VarDec* aux;
+        aux = parseVarDec();
+        while (aux != NULL) {
+            vdl->add(aux);
+            aux = parseVarDec();
+        }
+    }
+    return vdl;
+}
+
 VarDec* Parser::parseVarDec() {
     VarDec* vd = NULL;
     list<string> ids;
@@ -98,19 +118,6 @@ VarDec* Parser::parseVarDec() {
         vd = new VarDec(type, ids);
     }
     return vd;
-}
-
-VarDecList* Parser::parseVarDecList() {
-    VarDecList* vdl = new VarDecList();
-    if (match(Token::VAR)) {
-        VarDec* aux;
-        aux = parseVarDec();
-        while (aux != NULL) {
-            vdl->add(aux);
-            aux = parseVarDec();
-        }
-    }
-    return vdl;
 }
 
 FunDec* Parser::parseFunDec() {
@@ -151,7 +158,10 @@ FunDec* Parser::parseFunDec() {
                 break;
             }
         }
-        match(Token::PD);
+        if (!match(Token::PD) ){
+            cout << "Error: se esperaba un ')' o ';' despues del tipo de los argumentos de procedure." << endl;
+                exit(1);
+        }
         if (!match(Token::PC)) {
             cout << "Error: se esperaba un ';' despues de ')' de procedure" << endl;
             exit(1);
@@ -199,7 +209,10 @@ FunDec* Parser::parseFunDec() {
                 break;
             }
         }
-        match(Token::PD);
+        if (!match(Token::PD) ){
+            cout << "Error: se esperaba un ')' o ';' despues del tipo de los argumentos de la funcion." << endl;
+            exit(1);
+        }
         if (!match(Token::COLON)) {
             cout << "Error: se esperaba un ':' despues de ')'." << endl;
             exit(1);
@@ -237,23 +250,120 @@ FunList* Parser::parseFunDecList() {
     return vdl;
 }
 
-BlockStmt* Parser::parseBody() {
-    VarDecList* vdl = parseVarDecList();
-    FunList* funlist = parseFunDecList();
+StatementList* Parser::parseStatementList() {
     if (!match(Token::BEGIN)) {
         cout << "Error: se esperaba un 'begin'." << endl;
         exit(1);
     }
-    StatementList* sl = parseStatementList();
+    StatementList* stl=new StatementList();
+    Stmt* aux;
+    aux = parseStatement();
+    while (aux != NULL) {
+        stl->add(aux);
+        aux = parseStatement();
+        if (!match(Token::PC)) {
+            cout << "Error: se ';' despues de la sentencia." << endl;
+            exit(1);
+        }
+    }
     if (!match(Token::END)) {
         cout << "Error: se esperaba un 'end'." << endl;
         exit(1);
     }
-    return new BlockStmt(vdl,funlist, sl);
+    return stl;
 }
 
-StatementList* Parser::parseStatementList() {
-    return new StatementList();
+Stmt* Parser::parseStatement() {
+    Stmt* s = NULL;
+    Exp* e;
+    if (current == NULL) {
+        cout << "Error: Token actual es NULL" << endl;
+        exit(1);
+    }
+    if (match(Token::ID)) {
+        string lex = previous->text;
+        if (match(Token::ASSIGN)) {
+            e = parseCExp();
+            s = new AssignStmt(lex, e);
+        }else if (match(Token::PD)) {
+            ExpList* exps=parseExpList();
+            if (!match(Token::PD)) {
+                cout << "Error: se esperaba un ')' después de la expresión." << endl;
+                exit(1);
+            }
+            s = new ProcedureCall(lex, exps);
+        }else {
+            s = new ProcedureCall(lex);
+        }
+
+    }else if (match(Token::WRITELN)) {
+        if (!match(Token::PI)) {
+            cout << "Error: se esperaba un '(' después de 'print'." << endl;
+            exit(1);
+        }
+        ExpList* exps = parseExpList();
+        if (!match(Token::PD)) {
+            cout << "Error: se esperaba un ')' después de la expresión." << endl;
+            exit(1);
+        }
+        s = new PrintStmt(exps);
+    }else if (match(Token::IF)){
+        StatementList* then=nullptr;
+        StatementList* else_=nullptr;
+        e = parseCExp();
+        if (!match(Token::THEN)) {
+            cout << "Error: se esperaba 'then' después de la expresión." << endl;
+            exit(1);
+        }
+        then=parseStatementList();
+        if (match(Token::ELSE)) {
+            else_=parseStatementList();
+        }
+        s = new IfStmt(e,then,else_);
+    }else if (match(Token::WHILE)) {
+        e = parseCExp();
+        if (!match(Token::DO)) {
+            cout << "Error: se esperaba 'do' después de la expresión." << endl;
+            exit(1);
+        }
+        StatementList* stms = parseStatementList();
+        s = new WhileStmt(e,stms);
+    }else if (match(Token::FOR)) {
+        if (!match(Token::ID)) {
+            cout << "Error: se esperaba 'ID' después del For." << endl;
+            exit(1);
+            }
+        string lex = previous->text;
+        if (!match(Token::ASSIGN)) {
+            cout << "Error: se esperaba un ':=' después del identificador." << endl;
+            exit(1);
+        }
+        e = parseCExp();
+        bool downto;
+        if (match(Token::TO)) downto=false;
+        else if (match(Token::DOWNTO)) downto=true;
+        else {
+            cout << "Error: se esperaba un TO o DOWNTO." << endl;
+            exit(1);
+        }
+        Exp* end=parseCExp();
+        if (!match(Token::DO)) {
+            cout << "Error: se esperaba 'do' después de la expresión." << endl;
+            exit(1);
+        }
+        StatementList* stms = parseStatementList();
+        s = new ForStmt(lex,e,end,downto,stms);
+    }else if (match(Token::BEGIN)) {
+        s = parseStatementList();
+        if (!match(Token::END)) {
+            cout << "Error: se esperaba 'END' después de la lista de sentencias." << endl;
+            exit(1);
+        }
+    }else {
+        cout << "Error: sentencia no reconocida: " << *current << endl;
+        exit(1);
+    }
+    return s;
 }
 
 

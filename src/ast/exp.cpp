@@ -48,3 +48,20 @@ FunctionCallExp::~FunctionCallExp() {
     for (auto arg : args) delete arg;
 }
 int FunctionCallExp::accept(Visitor* visitor) { return visitor->visit(this); }
+
+// ExpList
+ExpList::ExpList() {}
+
+void ExpList::add(Exp* exp) {
+    exps.push_back(exp);
+}
+
+void ExpList::accept(Visitor* visitor) {
+    visitor->visit(this);
+}
+
+ExpList::~ExpList() {
+    for (auto e : exps) {
+        delete e;
+    }
+}

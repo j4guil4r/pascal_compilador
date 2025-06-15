@@ -17,6 +17,7 @@ private:
     Exp* parseExpression();
     Exp* parseTerm();
     Exp* parseFactor();
+    ExpList* parseExpList();
     Stmt* parseStatement();
     StatementList* parseStatementList();
     VarDec* parseVarDec();

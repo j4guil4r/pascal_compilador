@@ -9,21 +9,21 @@ function_section: 'function' ID [formal_parameters] ':' type ';' block ';'
 procedure_section : 'procedure' ID [formal_parameters] ';' block ';';
 formal_parameters : '(' var_declaration (';' var_declaration)* ')'
 compound_statement : 'begin' statement_list 'end'
-statement_list : statement (';' statement)*
+statement_list : statement ';' (statement ';')*
 statement        : assignment
                  | if_statement
                  | while_statement
                  | for_statement
-                 | procedure_call ';'
+                 | procedure_call
                  | print_statement
                  | compound_statement
-assignment       : ID ':=' expression
-print_statement  : 'writeln' '(' [expression_list] ')' ';'  /* Ej: writeln(x); */
-if_statement     : 'if' expression 'then' statement ['else' statement]
-while_statement  : 'while' expression 'do' statement
-for_statement    : 'for' ID ':=' expression ('to' | 'downto') expression 'do' statement
+assignment       : ID ':=' expression ';'
+print_statement  : 'writeln' '(' [expression_list] ')' ';'
+if_statement     : 'if' expression 'then' statement ['else' statement] ';'
+while_statement  : 'while' expression 'do' statement ';'
+for_statement    : 'for' ID ':=' expression ('to' | 'downto') expression 'do' statement ';'
 function_call    : ID '(' [expression_list] ')'
-procedure_call   : ID ['(' [expression_list] ')']
+procedure_call   : ID ['(' [expression_list] ')'] ';'
 expression_list  : expression (',' expression)*
 expression       : simple_expression [relational_operator simple_expression]
 simple_expression: term (addition_operator term)*
