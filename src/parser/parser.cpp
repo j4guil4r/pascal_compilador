@@ -140,7 +140,7 @@ FunDec* Parser::parseFunDec() {
                 parametros.push_back(previous->text);
                 contador++;
             }
-            if (!match(Token::ID)) {
+            if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
                 cout << "Error: se esperaba un tipo de declaracion despues de ':'." << endl;
                 exit(1);
             }
@@ -153,7 +153,7 @@ FunDec* Parser::parseFunDec() {
         }
         match(Token::PD);
         if (!match(Token::PC)) {
-            cout << "Error: se esperaba un ';' despues del tipo de retorno." << endl;
+            cout << "Error: se esperaba un ';' despues de ')' de procedure" << endl;
             exit(1);
         }
         BlockStmt *block = parseBody();
