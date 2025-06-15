@@ -74,8 +74,8 @@ Token* Scanner::nextToken() {
         else if (word == "unsignedint") {
             token = new Token(Token::UNSIGNEDINT, word, 0, word.length());
         }
-        else if (word == "void") {
-            token = new Token(Token::VOID, word, 0, word.length());
+        else if (word == "procedure") {
+            token = new Token(Token::PROCEDURE, word, 0, word.length());
         }
         else if (word == "not") {
             token = new Token(Token::NOT, word, 0, word.length());

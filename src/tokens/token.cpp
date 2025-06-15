@@ -30,7 +30,6 @@ std::ostream& operator<<(std::ostream& outs, const Token& tok) {
         case Token::INTEGER: outs << "TOKEN(INTEGER)"; break;
         case Token::LONGINT: outs << "TOKEN(LONGINT)"; break;
         case Token::UNSIGNEDINT: outs << "TOKEN(UNSIGNEDINT)"; break;
-        case Token::VOID: outs << "TOKEN(VOID)"; break;
         case Token::NOT: outs << "TOKEN(NOT)"; break;
         case Token::OR: outs << "TOKEN(OR)"; break;
         case Token::AND:outs << "TOKEN(AND)"; break;
@@ -53,6 +52,7 @@ std::ostream& operator<<(std::ostream& outs, const Token& tok) {
         case Token::MINUS: outs << "TOKEN(-)"; break;
         case Token::MULT: outs << "TOKEN(*)"; break;
         case Token::ID: outs << "TOKEN(ID)"; break;
+        case Token::PROCEDURE: outs << "TOKEN(PROCEDURE)"; break;
         case Token::NUM: outs << "TOKEN(NUM)"; break;
         case Token::ERR: outs << "TOKEN(ERR)"; break;
         case Token::FINISH: outs << "TOKEN(FINISH)"; break;

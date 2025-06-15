@@ -22,7 +22,6 @@ public:
         INTEGER,
         LONGINT,
         UNSIGNEDINT,
-        VOID,
         NOT,
         OR,
         AND,
@@ -46,7 +45,7 @@ public:
         PD,
         ID,
         NUM,
-        //agregados por conveniencia
+        PROCEDURE,
         ERR,
         FINISH
     };
