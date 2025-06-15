@@ -1,6 +1,7 @@
 #ifndef PASCAL_COMPILADOR_STMT_H
 #define PASCAL_COMPILADOR_STMT_H
 #include "exp.h"
+#include "program.h"
 #include <list>
 
 // Sentencias
@@ -52,8 +53,8 @@ public:
     Exp* startValue;
     Exp* endValue;
     bool isDownto;
-    Stmt* body;
-    ForStmt();
+    BlockStmt* body;
+    ForStmt(std::string varName,Exp* startValue,Exp* endValue,bool isDownto,BlockStmt* body);
     void accept(Visitor* visitor) override;
     ~ForStmt();
 };

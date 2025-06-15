@@ -57,7 +57,7 @@ WhileStmt::~WhileStmt() {
 }
 
 // ForStmt
-ForStmt::ForStmt() : startValue(nullptr), endValue(nullptr), isDownto(false), body(nullptr) {}
+ForStmt::ForStmt(std::string varName,Exp* startValue,Exp* endValue,bool isDownto,BlockStmt* body) : startValue(startValue), endValue(endValue), isDownto(isDownto), body(body) {}
 
 void ForStmt::accept(Visitor* visitor) {
     visitor->visit(this);

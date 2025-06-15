@@ -24,10 +24,8 @@ private:
     VarDecList* parseVarDecList();
     BlockStmt* parseBody();
     FunDec* parseFunDec();
-    FunctionCallExp* parsefuncall();
-    FunDecList* parseFunDecList();
     ProceDec* parseProceDec();
-    ProcedureCall* parseProcedureCall();
+    FunList* parseFunDecList();
 public:
     Parser(Scanner* scanner);
 };

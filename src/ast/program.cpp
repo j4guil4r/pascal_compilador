@@ -32,7 +32,11 @@ VarDecList::~VarDecList() {
 }
 
 // FunDec
-FunDec::FunDec(std::string nombre,std::string returnType,BlockStmt* cuerpo):nombre(nombre), returnType(returnType), cuerpo(cuerpo) {}
+FunDec::FunDec(std::string nombre_,std::string returnType_,BlockStmt* cuerpo_){
+    nombre=nombre_;
+    returnType=returnType_;
+    cuerpo=cuerpo_;
+}
 
 void FunDec::accept(Visitor* visitor) {
     visitor->visit(this);
@@ -42,21 +46,35 @@ FunDec::~FunDec() {
     delete cuerpo;
 }
 
-// FunDecList
-FunDecList::FunDecList() {}
-
-void FunDecList::accept(Visitor* visitor) {
+// Procedure
+ProceDec::ProceDec(std::string nombre_,std::string returnType_,BlockStmt* cuerpo_){
+    nombre=nombre_;
+    returnType=returnType_;
+    cuerpo=cuerpo_;
+}
+void ProceDec::accept(Visitor* visitor) {
     visitor->visit(this);
 }
 
-FunDecList::~FunDecList() {
-    for (auto v : Fundecs) {
+ProceDec::~ProceDec() {
+    delete cuerpo;
+}
+
+// Funcion List
+FunList::FunList() {}
+
+void FunList::accept(Visitor* visitor) {
+    visitor->visit(this);
+}
+
+FunList::~FunList() {
+    for (auto v : Fundcs) {
         delete v;
     }
 }
 
 //Body
-BlockStmt::BlockStmt(VarDecList* vardecs,FunDecList* fundeclist, StatementList* stms)
+BlockStmt::BlockStmt(VarDecList* vardecs,FunList* fundeclist, StatementList* stms)
     : vardeclist(vardecs), slist(stms), fundeclist(fundeclist) {}
 
 void BlockStmt::accept(Visitor* visitor) {

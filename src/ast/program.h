@@ -27,7 +27,7 @@ class VarDecList{
 public:
     std::list<VarDec*> vardecs;
     VarDecList();
-    void VarDecList::add(VarDec* vardec) {
+    void add(VarDec* vardec) {
         vardecs.push_back(vardec);
     }
     void accept(Visitor* visitor);
@@ -35,48 +35,51 @@ public:
 };
 
 // Declaraciones Funciones
-class FunDec {
+class Func {
 public:
     std::string nombre;
     std::string returnType;
     std::list<std::string> parametros;
     std::list<std::string> tipos;
     BlockStmt* cuerpo;
+    virtual ~Func() = 0;
+    virtual void accept(Visitor* visitor) = 0;
+};
+
+class FunDec: public Func {
+public:
     FunDec(std::string nombre,std::string returnType,BlockStmt* cuerpo);
     ~FunDec();
     void accept(Visitor* visitor);
 };
 
-class ProceDec {
+//Procedure
+class ProceDec: public Func {
 public:
-    std::string nombre;
-    std::string returnType;
-    std::list<std::string> parametros;
-    std::list<std::string> tipos;
-    BlockStmt* cuerpo;
     ProceDec(std::string nombre,std::string returnType,BlockStmt* cuerpo);
     ~ProceDec();
     void accept(Visitor* visitor);
 };
 
-class FunDecList{
+//funlist
+class FunList{
 public:
-    std::list<FunDec*> Fundecs;
+    std::list<Func*> Fundcs;
     void add(FunDec* fundec) {
-        Fundecs.push_back(fundec);
+        Fundcs.push_back(fundec);
     };
     void accept(Visitor* visitor);
-    FunDecList();
-    ~FunDecList();
+    FunList();
+    ~FunList();
 };
 
 //Body
 class BlockStmt{
 public:
     VarDecList* vardeclist;
-    FunDecList* fundeclist;
+    FunList* fundeclist;
     StatementList* slist;
-    BlockStmt(VarDecList* vardecs,FunDecList* fundeclist,StatementList* stms);
+    BlockStmt(VarDecList* vardecs,FunList* fundeclist,StatementList* stms);
     void accept(Visitor* visitor);
     ~BlockStmt();
 };

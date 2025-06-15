@@ -11,7 +11,7 @@
 class Program;
 class BlockStmt;
 class FunDec;
-class FunDecList;
+class FunList;
 class AssignStmt;
 class PrintStmt;
 class IfStmt;
@@ -43,7 +43,8 @@ public:
 
     //Funcion
     virtual void visit(FunDec* funcDec) = 0;
-    virtual void visit(FunDecList* funcDecList) = 0;
+    virtual void visit(FunList* funcDecList) = 0;
+    virtual void visit(ProceDec* funcDec) = 0;
 
     // Sentencias
     virtual void visit(AssignStmt* assign) = 0;
