@@ -35,7 +35,7 @@ bool Parser::advance() {
 }
 
 bool Parser::isAtEnd() {
-    return (current->type == Token::END);
+    return (current->type == Token::FINISH);
 }
 
 Parser::Parser(Scanner* sc):scanner(sc) {
@@ -86,7 +86,7 @@ VarDec* Parser::parseVarDec() {
             cout << "Error: se esperaba ':' después de listar las IDs." << endl;
             exit(1);
         }
-        if (!match(Token::ID)) {
+        if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
             cout << "Error: se esperaba un tipo después de ':'." << endl;
             exit(1);
         }
@@ -188,7 +188,7 @@ FunDec* Parser::parseFunDec() {
                 parametros.push_back(previous->text);
                 contador++;
             }
-            if (!match(Token::ID)) {
+            if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
                 cout << "Error: se esperaba un tipo de declaracion despues de ':'." << endl;
                 exit(1);
             }
@@ -204,7 +204,7 @@ FunDec* Parser::parseFunDec() {
             cout << "Error: se esperaba un ':' despues de ')'." << endl;
             exit(1);
         }
-        if (!match(Token::ID)) {
+        if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
             cout << "Error: se esperaba un tipo de retorno despues de ':'." << endl;
             exit(1);
         }
@@ -223,6 +223,7 @@ FunDec* Parser::parseFunDec() {
         fu->parametros=parametros;
         return fu;
     }
+    return vd;
 }
 
 FunList* Parser::parseFunDecList() {
@@ -251,7 +252,7 @@ BlockStmt* Parser::parseBody() {
     return new BlockStmt(vdl,funlist, sl);
 }
 
-StatementList *Parser::parseStatementList() {
+StatementList* Parser::parseStatementList() {
     return new StatementList();
 }
 

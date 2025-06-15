@@ -17,15 +17,16 @@ private:
     Exp* parseExpression();
     Exp* parseTerm();
     Exp* parseFactor();
-    Program* parseProgram();
     Stmt* parseStatement();
     StatementList* parseStatementList();
     VarDec* parseVarDec();
     VarDecList* parseVarDecList();
     BlockStmt* parseBody();
     FunDec* parseFunDec();
-    ProceDec* parseProceDec();
     FunList* parseFunDecList();
 public:
     Parser(Scanner* scanner);
+    Program* parseProgram();
 };
+
+#endif // PARSER_H
