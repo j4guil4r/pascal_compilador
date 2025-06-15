@@ -46,20 +46,6 @@ FunDec::~FunDec() {
     delete cuerpo;
 }
 
-// Procedure
-ProceDec::ProceDec(std::string nombre_,std::string returnType_,BlockStmt* cuerpo_){
-    nombre=nombre_;
-    returnType=returnType_;
-    cuerpo=cuerpo_;
-}
-void ProceDec::accept(Visitor* visitor) {
-    visitor->visit(this);
-}
-
-ProceDec::~ProceDec() {
-    delete cuerpo;
-}
-
 // Funcion List
 FunList::FunList() {}
 

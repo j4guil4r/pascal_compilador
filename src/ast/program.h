@@ -35,36 +35,22 @@ public:
 };
 
 // Declaraciones Funciones
-class Func {
+class FunDec {
 public:
     std::string nombre;
     std::string returnType;
     std::list<std::string> parametros;
     std::list<std::string> tipos;
     BlockStmt* cuerpo;
-    virtual ~Func() = 0;
-    virtual void accept(Visitor* visitor) = 0;
-};
-
-class FunDec: public Func {
-public:
     FunDec(std::string nombre,std::string returnType,BlockStmt* cuerpo);
     ~FunDec();
-    void accept(Visitor* visitor);
-};
-
-//Procedure
-class ProceDec: public Func {
-public:
-    ProceDec(std::string nombre,std::string returnType,BlockStmt* cuerpo);
-    ~ProceDec();
     void accept(Visitor* visitor);
 };
 
 //funlist
 class FunList{
 public:
-    std::list<Func*> Fundcs;
+    std::list<FunDec*> Fundcs;
     void add(FunDec* fundec) {
         Fundcs.push_back(fundec);
     };

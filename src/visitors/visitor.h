@@ -26,7 +26,6 @@ class VarDec;
 class VarDecList;
 class StatementList;
 class ProcedureCall;
-class ProceDec;
 
 class Visitor {
 public:
@@ -44,7 +43,6 @@ public:
     //Funcion
     virtual void visit(FunDec* funcDec) = 0;
     virtual void visit(FunList* funcDecList) = 0;
-    virtual void visit(ProceDec* funcDec) = 0;
 
     // Sentencias
     virtual void visit(AssignStmt* assign) = 0;
