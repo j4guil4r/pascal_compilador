@@ -106,7 +106,7 @@ VarDec* Parser::parseVarDec() {
             cout << "Error: se esperaba ':' después de listar las IDs." << endl;
             exit(1);
         }
-        if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
+        if (!(match(Token::INTEGER) || match(Token::UNSIGNEDINT) || match(Token::LONGINT) || match(Token::BOOL))) {
             cout << "Error: se esperaba un tipo después de ':'." << endl;
             exit(1);
         }
@@ -124,6 +124,10 @@ FunDec* Parser::parseFunDec() {
     FunDec* vd = NULL;
     string nombre;
     string returntype;
+    if (current == NULL) {
+        cout << "Error: Token actual es NULL" << endl;
+        exit(1);
+    }
     if (match(Token::PROCEDURE)) {
         returntype = "void";
         match(Token::ID);
@@ -147,8 +151,8 @@ FunDec* Parser::parseFunDec() {
                 parametros.push_back(previous->text);
                 contador++;
             }
-            if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
-                cout << "Error: se esperaba un tipo de declaracion despues de ':'." << endl;
+            if (!(match(Token::INTEGER) || match(Token::UNSIGNEDINT) || match(Token::LONGINT) || match(Token::BOOL))) {
+                cout << "Error: se esperaba un tipo después de ':'." << endl;
                 exit(1);
             }
             for (int i=0;i<contador;i++) {
@@ -217,8 +221,8 @@ FunDec* Parser::parseFunDec() {
             cout << "Error: se esperaba un ':' despues de ')'." << endl;
             exit(1);
         }
-        if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
-            cout << "Error: se esperaba un tipo de retorno despues de ':'." << endl;
+        if (!(match(Token::INTEGER) || match(Token::UNSIGNEDINT) || match(Token::LONGINT) || match(Token::BOOL))) {
+            cout << "Error: se esperaba un tipo después de ':'." << endl;
             exit(1);
         }
         returntype = previous->text;
@@ -259,12 +263,12 @@ StatementList* Parser::parseStatementList() {
     Stmt* aux;
     aux = parseStatement();
     while (aux != NULL) {
-        stl->add(aux);
-        aux = parseStatement();
         if (!match(Token::PC)) {
             cout << "Error: se ';' despues de la sentencia." << endl;
             exit(1);
         }
+        stl->add(aux);
+        aux = parseStatement();
     }
     if (!match(Token::END)) {
         cout << "Error: se esperaba un 'end'." << endl;
@@ -366,6 +370,128 @@ Stmt* Parser::parseStatement() {
     return s;
 }
 
+ExpList* Parser::parseExpList() {
+    ExpList* exps=new ExpList();
+    Exp* aux;
+    aux = parseCExp();
+    while (aux != NULL && match(Token::COMMA)) {
+        exps->add(aux);
+        aux = parseCExp();
+    }
+    return exps;
+}
 
+Exp* Parser::parseCExp(){
+    Exp* left = parseExpression();
+    if (match(Token::LT) || match(Token::LE) || match(Token::EQ) || match(Token::NOT_EQ) || match(Token::GE) || match(Token::GT)) {
+        BinaryOp op;
+        if (previous->type == Token::LT){
+            op = LT_OP;
+        }
+        else if (previous->type == Token::LE){
+            op = LE_OP;
+        }
+        else if (previous->type == Token::EQ){
+            op = EQ_OP;
+        }
+        else if (previous->type == Token::NOT_EQ){
+            op = NEQ_OP;
+        }
+        else if (previous->type == Token::GE){
+            op = GE_OP;
+        }
+        else if (previous->type == Token::GT){
+            op = GT_OP;
+        }
+        Exp* right = parseExpression();
+        left = new BinaryExp(left, right, op);
+    }
+    return left;
+}
 
+Exp* Parser::parseExpression() {
+    Exp* left = parseTerm();
+    while (match(Token::PLUS) || match(Token::MINUS) || match(Token::OR)) {
+        BinaryOp op;
+        if (previous->type == Token::PLUS){
+            op = PLUS_OP;
+        }
+        else if (previous->type == Token::MINUS){
+            op = MINUS_OP;
+        }
+        else if (previous->type == Token::OR){
+            op = OR_OP;
+        }
+        Exp* right = parseTerm();
+        left = new BinaryExp(left, right, op);
+    }
+    return left;
+}
+
+Exp* Parser::parseTerm() {
+    Exp* left = parseFactor();
+    while (match(Token::MULT) || match(Token::DIV)|| match(Token::MOD) || match(Token::AND)) {
+        BinaryOp op;
+        if (previous->type == Token::MULT){
+            op = MUL_OP;
+        }
+        else if (previous->type == Token::DIV){
+            op = DIV_OP;
+        }
+        else if (previous->type == Token::MOD){
+            op = MOD_OP;
+        }
+        else if (previous->type == Token::AND){
+            op = AND_OP;
+        }
+        Exp* right = parseFactor();
+        left = new BinaryExp(left, right, op);
+    }
+    return left;
+}
+
+Exp* Parser::parseFactor() {
+    Exp* e;
+    Exp* e1;
+    Exp* e2;
+    if (match(Token::TRUE)){
+        return new BoolExp(1);
+    }else if (match(Token::FALSE)){
+        return new BoolExp(0);
+    }
+    else if (match(Token::NUM)) {
+        return new NumberExp(stoi(previous->text));
+    }
+    else if (match(Token::ID)) {
+        string s = previous->text;
+        if (match(Token::PI)) {
+            ExpList* exps = parseExpList();
+            FunctionCallExp* f = new FunctionCallExp(s,exps);
+            return f;
+        }
+        return new IdentifierExp(s);
+    }
+    else if (match(Token::PI)){
+        e = parseCExp();
+        if (!match(Token::PD)){
+            cout << "Falta paréntesis derecho" << endl;
+            exit(0);
+        }
+        return e;
+    }
+    else if (match(Token::NOT)){
+        string s = previous->text;
+        Exp* a = parseFactor();
+        e = new UnaryExp(a,s);
+        return e;
+    }
+    else if (match(Token::MINUS)){
+        string s = previous->text;
+        Exp* a = parseFactor();
+        e = new UnaryExp(a,s);
+        return e;
+    }
+    cout << "Error: se esperaba un número o identificador."<<*previous<<*current << endl;
+    exit(0);
+}
 

@@ -52,6 +52,9 @@ std::ostream& operator<<(std::ostream& outs, const Token& tok) {
         case Token::MINUS: outs << "TOKEN(-)"; break;
         case Token::MULT: outs << "TOKEN(*)"; break;
         case Token::ID: outs << "TOKEN(ID)"; break;
+        case Token::BOOL: outs << "TOKEN(BOOLEAN)"; break;
+        case Token::TRUE: outs << "TOKEN(TRUE)"; break;
+        case Token::FALSE: outs << "TOKEN(FALSE)"; break;
         case Token::PROCEDURE: outs << "TOKEN(PROCEDURE)"; break;
         case Token::NUM: outs << "TOKEN(NUM)"; break;
         case Token::ERR: outs << "TOKEN(ERR)"; break;

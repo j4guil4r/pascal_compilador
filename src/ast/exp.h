@@ -25,6 +25,13 @@ public:
     int accept(Visitor* visitor) override;
 };
 
+class BoolExp : public Exp {
+public:
+    bool value;
+    BoolExp(bool v);
+    int accept(Visitor* visitor) override;
+};
+
 class IdentifierExp : public Exp {
 public:
     std::string name;
@@ -55,8 +62,8 @@ public:
 class FunctionCallExp : public Exp {
 public:
     std::string funcName;
-    std::list<Exp*> args;
-    FunctionCallExp(const std::string& name, std::list<Exp*> args);
+    ExpList* args;
+    FunctionCallExp(const std::string& name, ExpList* args);
     int accept(Visitor* visitor) override;
     ~FunctionCallExp();
 };

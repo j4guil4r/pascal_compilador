@@ -47,7 +47,10 @@ public:
         NUM,
         PROCEDURE,
         ERR,
-        FINISH
+        FINISH,
+        BOOL,
+        TRUE,
+        FALSE
     };
     Type type;
     std::string text;

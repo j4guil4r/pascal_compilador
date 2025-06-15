@@ -50,6 +50,15 @@ Token* Scanner::nextToken() {
         else if (word == "program") {
             token = new Token(Token::PROGRAM, word, 0, word.length());
         }
+        else if (word == "boolean") {
+            token = new Token(Token::BOOL, word, 0, word.length());
+        }
+        else if (word == "true") {
+            token = new Token(Token::TRUE, word, 0, word.length());
+        }
+        else if (word == "false") {
+            token = new Token(Token::FALSE, word, 0, word.length());
+        }
         else if (word == "function") {
             token = new Token(Token::FUNCTION, word, 0, word.length());
         }

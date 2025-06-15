@@ -27,6 +27,7 @@ class VarDecList;
 class StatementList;
 class ProcedureCall;
 class ExpList;
+class BoolExp;
 
 class Visitor {
 public:
@@ -57,6 +58,7 @@ public:
     virtual int visit(BinaryExp* binary) = 0;
     virtual int visit(UnaryExp* unary) = 0;
     virtual int visit(NumberExp* number) = 0;
+    virtual int visit(BoolExp* explist) = 0;
     virtual int visit(IdentifierExp* id) = 0;
     virtual int visit(FunctionCallExp* funcCall) = 0;
     virtual int visit(ExpList* explist) = 0;

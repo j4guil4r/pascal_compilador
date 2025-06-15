@@ -29,6 +29,8 @@ expression       : simple_expression [relational_operator simple_expression]
 simple_expression: term (addition_operator term)*
 term             : factor (multiplication_operator factor)*
 factor           : ID
+                 | true
+                 | false
                  | '(' expression ')'
                  | 'not' factor
                  | '-' factor

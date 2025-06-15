@@ -26,6 +26,10 @@ std::string Exp::binopToStr(BinaryOp op) {
 NumberExp::NumberExp(int v) : value(v) {}
 int NumberExp::accept(Visitor* visitor) { return visitor->visit(this); }
 
+//BoolExp
+BoolExp::BoolExp(bool v) : value(v) {}
+int BoolExp::accept(Visitor* visitor) { return visitor->visit(this); }
+
 // IdentifierExp
 IdentifierExp::IdentifierExp(const std::string& name) : name(name) {}
 int IdentifierExp::accept(Visitor* visitor) { return visitor->visit(this); }
@@ -41,11 +45,10 @@ UnaryExp::~UnaryExp() { delete expr; }
 int UnaryExp::accept(Visitor* visitor) { return visitor->visit(this); }
 
 // FunctionCallExp
-FunctionCallExp::FunctionCallExp(const std::string& name, std::list<Exp*> args)
-        : funcName(name), args(args) {}
+FunctionCallExp::FunctionCallExp(const std::string& name, ExpList* args): funcName(name), args(args) {}
 
 FunctionCallExp::~FunctionCallExp() {
-    for (auto arg : args) delete arg;
+    delete args;
 }
 int FunctionCallExp::accept(Visitor* visitor) { return visitor->visit(this); }
 
