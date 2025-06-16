@@ -17,13 +17,13 @@ statement        : assignment
                  | procedure_call
                  | print_statement
                  | compound_statement
-assignment       : ID ':=' expression ';'
-print_statement  : 'writeln' '(' [expression_list] ')' ';'
-if_statement     : 'if' expression 'then' statement ['else' statement] ';'
-while_statement  : 'while' expression 'do' statement ';'
-for_statement    : 'for' ID ':=' expression ('to' | 'downto') expression 'do' statement ';'
+assignment       : ID ':=' expression
+print_statement  : 'writeln' '(' [expression_list] ')'
+if_statement     : 'if' expression 'then' compound_statement ['else' compound_statement]
+while_statement  : 'while' expression 'do' compound_statement
+for_statement    : 'for' ID ':=' expression ('to' | 'downto') expression 'do' compound_statement
 function_call    : ID '(' [expression_list] ')'
-procedure_call   : ID ['(' [expression_list] ')'] ';'
+procedure_call   : ID ['(' [expression_list] ')']
 expression_list  : expression (',' expression)*
 expression       : simple_expression [relational_operator simple_expression]
 simple_expression: term (addition_operator term)*
