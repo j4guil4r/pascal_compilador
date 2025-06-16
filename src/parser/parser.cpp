@@ -132,39 +132,40 @@ FunDec* Parser::parseFunDec() {
         returntype = "void";
         match(Token::ID);
         nombre = previous->text;
-        match(Token::PI);
         list<string> parametros;
         list<string> tipos;
-        int contador;
-        while(match(Token::ID)) {
-            contador = 1;
-            parametros.push_back(previous->text);
-            while (!match(Token::COLON)) {
-                if (!match(Token::COMMA)) {
-                    cout << "Error: se esperaba un ',' o ':' despues de la declaración." << endl;
-                    exit(1);
-                }
-                if (!match(Token::ID)) {
-                    cout << "Error: se esperaba una ID despues de ','." << endl;
-                    exit(1);
-                }
+        if (match(Token::PI)) {
+            int contador;
+            while(match(Token::ID)) {
+                contador = 1;
                 parametros.push_back(previous->text);
-                contador++;
+                while (!match(Token::COLON)) {
+                    if (!match(Token::COMMA)) {
+                        cout << "Error: se esperaba un ',' o ':' despues de la declaración." << endl;
+                        exit(1);
+                    }
+                    if (!match(Token::ID)) {
+                        cout << "Error: se esperaba una ID despues de ','." << endl;
+                        exit(1);
+                    }
+                    parametros.push_back(previous->text);
+                    contador++;
+                }
+                if (!(match(Token::INTEGER) || match(Token::UNSIGNEDINT) || match(Token::LONGINT) || match(Token::BOOL))) {
+                    cout << "Error: se esperaba un tipo después de ':'." << endl;
+                    exit(1);
+                }
+                for (int i=0;i<contador;i++) {
+                    tipos.push_back(previous->text);
+                }
+                if (!match(Token::PC)) {
+                    break;
+                }
             }
-            if (!(match(Token::INTEGER) || match(Token::UNSIGNEDINT) || match(Token::LONGINT) || match(Token::BOOL))) {
-                cout << "Error: se esperaba un tipo después de ':'." << endl;
+            if (!match(Token::PD) ){
+                cout << "Error: se esperaba un ')' o ';' despues del tipo de los argumentos de procedure." << endl;
                 exit(1);
             }
-            for (int i=0;i<contador;i++) {
-                tipos.push_back(previous->text);
-            }
-            if (!match(Token::PC)) {
-                break;
-            }
-        }
-        if (!match(Token::PD) ){
-            cout << "Error: se esperaba un ')' o ';' despues del tipo de los argumentos de procedure." << endl;
-                exit(1);
         }
         if (!match(Token::PC)) {
             cout << "Error: se esperaba un ';' despues de ')' de procedure" << endl;
@@ -178,44 +179,56 @@ FunDec* Parser::parseFunDec() {
         }
         fu->tipos=tipos;
         fu->parametros=parametros;
+        cout<<nombre<<endl;
+        cout<<"tipos"<<endl;
+        for (auto e:fu->tipos) {
+            cout << e;
+        }
+        cout<<endl;
+        cout<<"parametros"<<endl;
+        for (auto e:fu->parametros) {
+            cout << e;
+        }
+        cout<<endl;
         return fu;
     }
-    if (match(Token::FUNCTION)) {
+    else if (match(Token::FUNCTION)) {
         match(Token::ID);
         nombre = previous->text;
-        match(Token::PI);
         list<string> parametros;
         list<string> tipos;
-        int contador;
-        while(match(Token::ID)) {
-            contador = 1;
-            parametros.push_back(previous->text);
-            while (!match(Token::COLON)) {
-                if (!match(Token::COMMA)) {
-                    cout << "Error: se esperaba un ',' o ':' despues de la declaración." << endl;
-                    exit(1);
-                }
-                if (!match(Token::ID)) {
-                    cout << "Error: se esperaba una ID despues de ','." << endl;
-                    exit(1);
-                }
+        if (match(Token::PI)) {
+            int contador;
+            while(match(Token::ID)) {
+                contador = 1;
                 parametros.push_back(previous->text);
-                contador++;
+                while (!match(Token::COLON)) {
+                    if (!match(Token::COMMA)) {
+                        cout << "Error: se esperaba un ',' o ':' despues de la declaración." << endl;
+                        exit(1);
+                    }
+                    if (!match(Token::ID)) {
+                        cout << "Error: se esperaba una ID despues de ','." << endl;
+                        exit(1);
+                    }
+                    parametros.push_back(previous->text);
+                    contador++;
+                }
+                if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
+                    cout << "Error: se esperaba un tipo de declaracion despues de ':'." << endl;
+                    exit(1);
+                }
+                for (int i=0;i<contador;i++) {
+                    tipos.push_back(previous->text);
+                }
+                if (!match(Token::PC)) {
+                    break;
+                }
             }
-            if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
-                cout << "Error: se esperaba un tipo de declaracion despues de ':'." << endl;
+            if (!match(Token::PD) ){
+                cout << "Error: se esperaba un ')' o ';' despues del tipo de los argumentos de la funcion." << endl;
                 exit(1);
             }
-            for (int i=0;i<contador;i++) {
-                tipos.push_back(previous->text);
-            }
-            if (!match(Token::PC)) {
-                break;
-            }
-        }
-        if (!match(Token::PD) ){
-            cout << "Error: se esperaba un ')' o ';' despues del tipo de los argumentos de la funcion." << endl;
-            exit(1);
         }
         if (!match(Token::COLON)) {
             cout << "Error: se esperaba un ':' despues de ')'." << endl;
@@ -238,6 +251,17 @@ FunDec* Parser::parseFunDec() {
         }
         fu->tipos=tipos;
         fu->parametros=parametros;
+        cout<<nombre<<endl;
+        cout<<"tipos"<<endl;
+        for (auto e:fu->tipos) {
+            cout << e;
+        }
+        cout<<endl;
+        cout<<"parametros"<<endl;
+        for (auto e:fu->parametros) {
+            cout << e;
+        }
+        cout<<endl;
         return fu;
     }
     return vd;
@@ -256,7 +280,7 @@ FunList* Parser::parseFunDecList() {
 
 StatementList* Parser::parseStatementList() {
     if (!match(Token::BEGIN)) {
-        cout << "Error: se esperaba un 'begin'." << endl;
+        cout << "Error: se esperaba un 'begin'." <<current->text<<" "<<previous->text<< endl;
         exit(1);
     }
     StatementList* stl=new StatementList();
@@ -264,7 +288,7 @@ StatementList* Parser::parseStatementList() {
     aux = parseStatement();
     while (aux != NULL) {
         if (!match(Token::PC)) {
-            cout << "Error: se ';' despues de la sentencia." << endl;
+            cout << "Error: se esperaba ';' despues de la sentencia."<< endl;
             exit(1);
         }
         stl->add(aux);
@@ -289,7 +313,7 @@ Stmt* Parser::parseStatement() {
         if (match(Token::ASSIGN)) {
             e = parseCExp();
             s = new AssignStmt(lex, e);
-        }else if (match(Token::PD)) {
+        }else if (match(Token::PI)) {
             ExpList* exps=parseExpList();
             if (!match(Token::PD)) {
                 cout << "Error: se esperaba un ')' después de la expresión." << endl;
@@ -357,15 +381,8 @@ Stmt* Parser::parseStatement() {
         }
         StatementList* stms = parseStatementList();
         s = new ForStmt(lex,e,end,downto,stms);
-    }else if (match(Token::BEGIN)) {
+    }else if (current->type==Token::BEGIN) {
         s = parseStatementList();
-        if (!match(Token::END)) {
-            cout << "Error: se esperaba 'END' después de la lista de sentencias." << endl;
-            exit(1);
-        }
-    }else {
-        cout << "Error: sentencia no reconocida: " << *current << endl;
-        exit(1);
     }
     return s;
 }
@@ -466,6 +483,10 @@ Exp* Parser::parseFactor() {
         string s = previous->text;
         if (match(Token::PI)) {
             ExpList* exps = parseExpList();
+            if (!match(Token::PD)){
+                cout << "Falta paréntesis derecho en la llamada a la funcion" << endl;
+                exit(0);
+            }
             FunctionCallExp* f = new FunctionCallExp(s,exps);
             return f;
         }
