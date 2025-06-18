@@ -17,4 +17,5 @@ add_executable(pascal_compilador main.cpp
         src/enviroment/enviroment.h
         src/parser/parser.h
         src/parser/parser.cpp
-        src/ast/program.cpp)
+        src/ast/program.cpp
+        src/visitors/visitor.cpp)
