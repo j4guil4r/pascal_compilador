@@ -24,6 +24,7 @@ public:
 class PrintStmt : public Stmt {
 public:
     ExpList* expressions;
+    PrintStmt(){}
     PrintStmt(ExpList* exps);
     void accept(Visitor* visitor) override;
     ~PrintStmt();

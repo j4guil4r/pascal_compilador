@@ -63,6 +63,7 @@ class FunctionCallExp : public Exp {
 public:
     std::string funcName;
     ExpList* args;
+    FunctionCallExp(const std::string& name);
     FunctionCallExp(const std::string& name, ExpList* args);
     int accept(Visitor* visitor) override;
     ~FunctionCallExp();

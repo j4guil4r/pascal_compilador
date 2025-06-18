@@ -314,27 +314,34 @@ Stmt* Parser::parseStatement() {
             e = parseCExp();
             s = new AssignStmt(lex, e);
         }else if (match(Token::PI)) {
-            ExpList* exps=parseExpList();
             if (!match(Token::PD)) {
-                cout << "Error: se esperaba un ')' después de la expresión." << endl;
-                exit(1);
+                ExpList* exps=parseExpList();
+                if (!match(Token::PD)) {
+                  cout << "Error: se esperaba un ')' después de la expresión." << endl;
+                  exit(1);
+                }
+                s = new ProcedureCall(lex, exps);
             }
-            s = new ProcedureCall(lex, exps);
-        }else {
-            s = new ProcedureCall(lex);
+            else {
+                s = new ProcedureCall(lex);
+            }
         }
-
     }else if (match(Token::WRITELN)) {
         if (!match(Token::PI)) {
             cout << "Error: se esperaba un '(' después de 'print'." << endl;
             exit(1);
         }
-        ExpList* exps = parseExpList();
         if (!match(Token::PD)) {
-            cout << "Error: se esperaba un ')' después de la expresión." << endl;
-            exit(1);
+            ExpList* exps = parseExpList();
+            if (!match(Token::PD)) {
+                cout << "Error: se esperaba un ')' después de la expresión." << endl;
+                exit(1);
+            }
+            s = new PrintStmt(exps);
         }
-        s = new PrintStmt(exps);
+        else {
+            s =new PrintStmt();
+        }
     }else if (match(Token::IF)){
         StatementList* then=nullptr;
         StatementList* else_=nullptr;
@@ -482,13 +489,15 @@ Exp* Parser::parseFactor() {
     else if (match(Token::ID)) {
         string s = previous->text;
         if (match(Token::PI)) {
-            ExpList* exps = parseExpList();
-            if (!match(Token::PD)){
-                cout << "Falta paréntesis derecho en la llamada a la funcion" << endl;
-                exit(0);
+            if (!match(Token::PD)) {
+                ExpList* exps = parseExpList();
+                if (!match(Token::PD)){
+                    cout << "Falta paréntesis derecho en la llamada a la funcion" << endl;
+                    exit(0);
+                }
+                return new FunctionCallExp(s,exps);
             }
-            FunctionCallExp* f = new FunctionCallExp(s,exps);
-            return f;
+            return new FunctionCallExp(s);
         }
         return new IdentifierExp(s);
     }

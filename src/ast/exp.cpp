@@ -45,6 +45,8 @@ UnaryExp::~UnaryExp() { delete expr; }
 int UnaryExp::accept(Visitor* visitor) { return visitor->visit(this); }
 
 // FunctionCallExp
+FunctionCallExp::FunctionCallExp(const std::string& name):funcName(name){}
+
 FunctionCallExp::FunctionCallExp(const std::string& name, ExpList* args): funcName(name), args(args) {}
 
 FunctionCallExp::~FunctionCallExp() {
