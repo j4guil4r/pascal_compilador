@@ -326,6 +326,7 @@ Stmt* Parser::parseStatement() {
                 s = new ProcedureCall(lex);
             }
         }
+        else s = new ProcedureCall(lex);
     }else if (match(Token::WRITELN)) {
         if (!match(Token::PI)) {
             cout << "Error: se esperaba un '(' después de 'print'." << endl;
