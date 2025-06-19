@@ -62,6 +62,7 @@ public:
 //Body
 class BlockStmt{
 public:
+    bool firstVarDec = false;
     VarDecList* vardeclist;
     FunList* fundeclist;
     StatementList* slist;
