@@ -91,6 +91,7 @@ void PrintVisitor::visit(IfStmt* ifStmt) {
     cout << " then" << endl;
     ifStmt->thenBlock->accept(this);
     if (ifStmt->elseBlock) {
+        cout << endl;
         cout << "else" << endl;
         ifStmt->elseBlock->accept(this);
     }
