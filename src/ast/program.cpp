@@ -4,6 +4,10 @@
 Program::Program(BlockStmt* body,std::string ProgramName_)
     : body(body),ProgramName(ProgramName_) {}
 
+void Program::accept(Visitor *visitor) {
+    visitor->visit(this);
+}
+
 Program::~Program() {
     delete body;
 }
@@ -13,7 +17,7 @@ VarDec::VarDec(std::string type, std::list<std::string> vars)
     : type(type), vars(vars) {}
 
 void VarDec::accept(Visitor* visitor) {
-    return visitor->visit(this);
+    visitor->visit(this);
 }
 
 VarDec::~VarDec() {}

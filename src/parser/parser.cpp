@@ -509,6 +509,7 @@ Exp* Parser::parseFactor() {
             cout << "Falta paréntesis derecho" << endl;
             exit(0);
         }
+        e->tieneParen = true;
         return e;
     }
     else if (match(Token::NOT)){

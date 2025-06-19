@@ -54,7 +54,7 @@ void PrintVisitor::visit(FunDec* funDec) {
         for(auto p = funDec->parametros.begin(), t = funDec->tipos.begin();
             p != funDec->parametros.end() && t != funDec->tipos.end();
             p++, t++) {
-            if (!first) cout << ";";
+            if (!first) cout << "; ";
             cout << *p << " : " << *t;
             first = false;
         }
@@ -115,6 +115,7 @@ void PrintVisitor::visit(ForStmt* forStmt) {
 
 
 int PrintVisitor::visit(BinaryExp* binary) {
+    if(binary->tieneParen) cout << '(';
     binary->left->accept(this);
     switch (binary->op) {
         case PLUS_OP: cout << " + "; break;
@@ -132,6 +133,7 @@ int PrintVisitor::visit(BinaryExp* binary) {
         case GE_OP: cout << " >= "; break;
     }
     binary->right->accept(this);
+    if(binary->tieneParen) cout << ')';
     return 0;
 }
 

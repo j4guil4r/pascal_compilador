@@ -54,7 +54,7 @@ WhileStmt::~WhileStmt() {
 }
 
 // ForStmt
-ForStmt::ForStmt(std::string varName,Exp* startValue,Exp* endValue,bool isDownto,StatementList* body) : startValue(startValue), endValue(endValue), isDownto(isDownto), body(body) {}
+ForStmt::ForStmt(std::string varName,Exp* startValue,Exp* endValue,bool isDownto,StatementList* body) : varName(varName), startValue(startValue), endValue(endValue), isDownto(isDownto), body(body) {}
 
 void ForStmt::accept(Visitor* visitor) {
     visitor->visit(this);
