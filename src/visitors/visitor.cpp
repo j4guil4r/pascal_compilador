@@ -39,7 +39,7 @@ void PrintVisitor::visit(VarDec *vd) {
 }
 
 void PrintVisitor::visit(VarDecList* varDecList) {
-    cout << "var "<<endl;
+    if (!varDecList->vardecs.empty()) cout << "var "<<endl;
     for(auto vd : varDecList->vardecs)
         vd->accept(this);
 }
