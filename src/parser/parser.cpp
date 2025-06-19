@@ -75,8 +75,13 @@ BlockStmt* Parser::parseBody() {
     FunList* funlist = parseFunDecList();
     VarDecList* vdl2 = parseVarDecList();
     StatementList* sl = parseStatementList();
-    if (!vdl1->vardecs.empty()) return new BlockStmt(vdl1,funlist, sl);
-    return new BlockStmt(vdl2,funlist, sl);
+    if (!vdl1->vardecs.empty() && !vdl2->vardecs.empty()) {
+        cout << "Error: se se detectaron dos blokes de declaracion de variables 'VAR'." << endl;
+        exit(1);
+    }
+    if (!vdl2->vardecs.empty()) return new BlockStmt(vdl2,funlist, sl);
+    return new BlockStmt(vdl1,funlist, sl);
+
 }
 
 VarDecList* Parser::parseVarDecList() {
