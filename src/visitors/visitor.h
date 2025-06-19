@@ -66,9 +66,27 @@ public:
 
 class PrintVisitor : public Visitor {
 public:
-    void imprimir(Program* program);
+    void visit (Program* program) override;
     void visit(BlockStmt* block) override;
+    void visit(StatementList* statementList) override;
+    void visit(VarDec* vd) override;
+    void visit(VarDecList* varDecList) override;
+    void visit(FunDec* funcDec) override;
+    void visit(FunList* funcDecList) override;
+    void visit(AssignStmt* assign) override;
+    void visit(PrintStmt* print) override;
+    void visit(IfStmt* ifStmt) override;
+    void visit(WhileStmt* whileStmt) override;
+    void visit(ForStmt* forStmt) override;
+    int visit(BinaryExp* binary) override;
+    int visit(UnaryExp* unary) override;
+    int visit(NumberExp* number) override;
+    int visit(BoolExp* boolExp) override;
+    int visit(IdentifierExp* id) override;
+    int visit(ExpList* expList) override;
 
+    int visit(FunctionCallExp* funcCall) override;
+    void visit(ProcedureCall* procCall) override;
 
 };
 

@@ -38,29 +38,26 @@ int main(int argc, const char* argv[]) {
     try {
         Program* program = parser.parseProgram();
         cout << "Parsing exitoso" << endl << endl;
-    }catch (const exception& e) {
-        cout << "Error durante la ejecución: " << e.what() << endl;
-        return 1;
-    }
-        /*
+
+
         cout << "Iniciando Visitor:" << endl;
         PrintVisitor printVisitor;
-        EVALVisitor evalVisitor;
-        TypeVisitor typeVisitor;
+        //EVALVisitor evalVisitorf;
+        //TypeVisitor typeVisitor;
         cout << "VERIFICANDO:" << endl;
-        typeVisitor.check(program);
+        //typeVisitor.check(program);
         cout << endl;
         cout << "IMPRIMIR:" << endl;
-        printVisitor.imprimir(program);
+        printVisitor.visit(program);
         cout  << endl;
         cout << "EJECUTAR:" << endl;
-        evalVisitor.ejecutar(program);
+        //evalVisitor.ejecutar(program);
         delete program;
     } catch (const exception& e) {
         cout << "Error durante la ejecución: " << e.what() << endl;
         return 1;
     }
-     */
+
 
     return 0;
 }
