@@ -1,6 +1,7 @@
 program          : 'program' ID ';' block '.'
 block            : [declaration_section] compound_statement
 declaration_section : [var_section] (function_section | procedure_section)*
+                    | (function_section | procedure_section)* [var_section]
 var_section      : 'var' (var_declaration ';')+
 var_declaration  : identifier_list ':' type
 identifier_list  : ID (',' ID)*
