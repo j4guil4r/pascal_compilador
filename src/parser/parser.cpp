@@ -71,10 +71,12 @@ Program* Parser::parseProgram() {
 }
 
 BlockStmt* Parser::parseBody() {
-    VarDecList* vdl = parseVarDecList();
+    VarDecList* vdl1 = parseVarDecList();
     FunList* funlist = parseFunDecList();
+    VarDecList* vdl2 = parseVarDecList();
     StatementList* sl = parseStatementList();
-    return new BlockStmt(vdl,funlist, sl);
+    if (!vdl1->vardecs.empty()) return new BlockStmt(vdl1,funlist, sl);
+    return new BlockStmt(vdl2,funlist, sl);
 }
 
 VarDecList* Parser::parseVarDecList() {
