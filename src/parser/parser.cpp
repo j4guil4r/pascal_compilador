@@ -56,7 +56,7 @@ Program* Parser::parseProgram() {
         cout << "Error: se esperaba ID despues de program" << endl;
         exit(1);
     }
-    string nombre = current->text;
+    string nombre = previous->text; //PREVIOUS XDDDD
     if (!match(Token::PC)) {
         cout << "Error: se esperaba ';' despues del nombre del programa" << endl;
         exit(1);
