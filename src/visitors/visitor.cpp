@@ -29,7 +29,6 @@ void PrintVisitor::visit(StatementList* statementList) {
 }
 
 void PrintVisitor::visit(VarDec *vd) {
-    cout << "var ";
     bool first = true;
     for (auto var: vd->vars) {
         if (!first) cout << ", ";
@@ -40,6 +39,7 @@ void PrintVisitor::visit(VarDec *vd) {
 }
 
 void PrintVisitor::visit(VarDecList* varDecList) {
+    if (!varDecList->vardecs.empty()) cout << "var "<<endl;
     for(auto vd : varDecList->vardecs)
         vd->accept(this);
 }
@@ -91,6 +91,7 @@ void PrintVisitor::visit(IfStmt* ifStmt) {
     cout << " then" << endl;
     ifStmt->thenBlock->accept(this);
     if (ifStmt->elseBlock) {
+        cout << endl;
         cout << "else" << endl;
         ifStmt->elseBlock->accept(this);
     }

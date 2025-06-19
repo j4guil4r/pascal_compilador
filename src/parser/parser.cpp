@@ -56,7 +56,7 @@ Program* Parser::parseProgram() {
         cout << "Error: se esperaba ID despues de program" << endl;
         exit(1);
     }
-    string nombre = previous->text; //PREVIOUS XDDDD
+    string nombre = previous->text;
     if (!match(Token::PC)) {
         cout << "Error: se esperaba ';' despues del nombre del programa" << endl;
         exit(1);
@@ -399,10 +399,11 @@ ExpList* Parser::parseExpList() {
     ExpList* exps=new ExpList();
     Exp* aux;
     aux = parseCExp();
-    while (aux != NULL && match(Token::COMMA)) {
+    while (match(Token::COMMA)) {
         exps->add(aux);
         aux = parseCExp();
     }
+    exps->add(aux);
     return exps;
 }
 
