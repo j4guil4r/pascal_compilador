@@ -36,7 +36,7 @@ void PrintVisitor::visit(VarDec *vd) {
         cout << var;
         first = false;
     }
-    cout << vd->type << ';' << endl;
+    cout << " : " <<vd->type << ';' << endl;
 }
 
 void PrintVisitor::visit(VarDecList* varDecList) {
@@ -47,11 +47,9 @@ void PrintVisitor::visit(VarDecList* varDecList) {
 void PrintVisitor::visit(FunDec* funDec) {
     if (funDec->returnType == "void") cout << "procedure ";
     else cout << "function ";
-    cout << funDec->nombre;
-
+    cout << funDec->nombre << '(';
 
     if(!funDec->parametros.empty()) {
-        cout << '(';
         bool first = true;
         for(auto p = funDec->parametros.begin(), t = funDec->tipos.begin();
             p != funDec->parametros.end() && t != funDec->tipos.end();
@@ -61,7 +59,7 @@ void PrintVisitor::visit(FunDec* funDec) {
             first = false;
         }
     }
-
+    cout << ')';
     if (funDec->returnType != "void") {
         cout << " : " << funDec->returnType;
     }
@@ -81,7 +79,9 @@ void PrintVisitor::visit(AssignStmt *assign) {
 
 void PrintVisitor::visit(PrintStmt* print) {
     cout << "writeln(";
-    print->expressions->accept(this);
+    if (print->expressions  && !print->expressions->exps.empty()) {
+        print->expressions->accept(this);
+    }
     cout << ")";
 }
 
@@ -135,7 +135,8 @@ int PrintVisitor::visit(BinaryExp* binary) {
 }
 
 int PrintVisitor::visit(UnaryExp* unary) {
-    cout << unary->op;
+    if (unary->op == "not") cout << "not ";
+    else cout << unary->op;
     unary->expr->accept(this);
     return 0;
 }
@@ -163,4 +164,25 @@ int PrintVisitor::visit(ExpList* expList) {
         first = false;
     }
     return 0;
+}
+
+
+int PrintVisitor::visit(FunctionCallExp* funcCall) {
+    cout << funcCall->funcName;
+    if (funcCall->args && !funcCall->args->exps.empty()) {
+        cout << "(";
+        funcCall->args->accept(this);
+        cout << ")";
+    }
+    else cout << "()";
+    return 0;
+}
+
+void PrintVisitor::visit(ProcedureCall* procCall) {
+    cout << procCall->funcName;
+    if (procCall->args && !procCall->args->exps.empty()) {
+        cout << "(";
+        procCall->args->accept(this);
+        cout << ")";
+    }
 }

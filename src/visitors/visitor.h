@@ -85,6 +85,8 @@ public:
     int visit(IdentifierExp* id) override;
     int visit(ExpList* expList) override;
 
+    int visit(FunctionCallExp* funcCall) override;
+    void visit(ProcedureCall* procCall) override;
 
 };
 
