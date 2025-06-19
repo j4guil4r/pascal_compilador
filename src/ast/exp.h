@@ -12,6 +12,7 @@ enum BinaryOp {
 
 class Exp {
 public:
+    bool tieneParen = false;
     virtual ~Exp() = 0;
     virtual int accept(Visitor* visitor) = 0;
     static std::string binopToStr(BinaryOp op);
