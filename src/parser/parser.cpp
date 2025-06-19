@@ -339,7 +339,6 @@ Stmt* Parser::parseStatement() {
                 exit(1);
             }
             s = new PrintStmt(exps);
-            cout<<exps->exps.size()<<endl;
         }
         else {
             s =new PrintStmt();
