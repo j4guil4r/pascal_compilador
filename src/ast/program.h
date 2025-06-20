@@ -40,7 +40,7 @@ public:
     std::string nombre;
     std::string returnType;
     std::list<std::string> parametros;
-    std::list<std::string> tipos;
+    std::vector<std::string> tipos;
     BlockStmt* cuerpo;
     FunDec(std::string nombre,std::string returnType,BlockStmt* cuerpo);
     ~FunDec();
