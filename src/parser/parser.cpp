@@ -145,7 +145,7 @@ FunDec* Parser::parseFunDec() {
         match(Token::ID);
         nombre = previous->text;
         list<string> parametros;
-        list<string> tipos;
+        vector<string> tipos;
         if (match(Token::PI)) {
             int contador;
             while(match(Token::ID)) {
@@ -208,7 +208,7 @@ FunDec* Parser::parseFunDec() {
         match(Token::ID);
         nombre = previous->text;
         list<string> parametros;
-        list<string> tipos;
+        vector<string> tipos;
         if (match(Token::PI)) {
             int contador;
             while(match(Token::ID)) {
