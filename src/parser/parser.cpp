@@ -71,6 +71,7 @@ Program* Parser::parseProgram() {
 }
 
 BlockStmt* Parser::parseBody() {
+    BlockStmt* b = NULL;
     VarDecList* vdl1 = parseVarDecList();
     FunList* funlist = parseFunDecList();
     VarDecList* vdl2 = parseVarDecList();
@@ -79,8 +80,12 @@ BlockStmt* Parser::parseBody() {
         cout << "Error: se se detectaron dos blokes de declaracion de variables 'VAR'." << endl;
         exit(1);
     }
-    if (!vdl2->vardecs.empty()) return new BlockStmt(vdl2,funlist, sl);
-    return new BlockStmt(vdl1,funlist, sl);
+    if (!vdl2->vardecs.empty()) { b = new BlockStmt(vdl2, funlist, sl); }
+    else{
+        b = new BlockStmt(vdl1,funlist, sl);
+        b->firstVarDec = true;
+    }
+    return b;
 
 }
 
@@ -140,7 +145,7 @@ FunDec* Parser::parseFunDec() {
         match(Token::ID);
         nombre = previous->text;
         list<string> parametros;
-        list<string> tipos;
+        vector<string> tipos;
         if (match(Token::PI)) {
             int contador;
             while(match(Token::ID)) {
@@ -203,7 +208,7 @@ FunDec* Parser::parseFunDec() {
         match(Token::ID);
         nombre = previous->text;
         list<string> parametros;
-        list<string> tipos;
+        vector<string> tipos;
         if (match(Token::PI)) {
             int contador;
             while(match(Token::ID)) {
