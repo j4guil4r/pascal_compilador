@@ -428,16 +428,22 @@ int TypeVisitor::visit(UnaryExp* unary) {
             cerr << "Error: Operador '-' requiere operando numérico" << endl;
             return TYPE_UNKNOWN;
         }
+        if (exprType == TYPE_UNSIGNEDINT) {
+            cerr << "Unsigned int no lleva signo" << endl;
+            return TYPE_UNKNOWN;
+        }
         return exprType; // Conserva el tipo (integer, longint, etc)
     }
 }
 
 int TypeVisitor::visit(NumberExp* number) {
-    return 1; // integer
+    //return 1; // integer
+    return TYPE_INTEGER;
 }
 
 int TypeVisitor::visit(BoolExp* boolExp) {
-    return 2; // boolean
+    //return 2; // boolean
+    return TYPE_BOOLEAN;
 }
 
 int TypeVisitor::visit(IdentifierExp* id) {
