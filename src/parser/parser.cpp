@@ -498,7 +498,7 @@ Exp* Parser::parseFactor() {
         return new BoolExp(0);
     }
     else if (match(Token::NUM)) {
-        return new NumberExp(stoi(previous->text));
+        return new NumberExp(previous->text);
     }
     else if (match(Token::ID)) {
         string s = previous->text;

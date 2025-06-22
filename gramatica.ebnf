@@ -7,7 +7,7 @@ var_declaration  : identifier_list ':' type
 identifier_list  : ID (',' ID)*
 type             : 'integer' | 'longint' | 'unsignedint' | 'void'
 function_section: 'function' ID [formal_parameters] ':' type ';' block ';'
-procedure_section : 'procedure' ID [formal_parameters] ';' block ';';
+procedure_section : 'procedure' ID [formal_parameters] ';' block ';'
 formal_parameters : '(' var_declaration (';' var_declaration)* ')'
 compound_statement : 'begin' statement_list 'end'
 statement_list : statement ';' (statement ';')*
@@ -36,7 +36,7 @@ factor           : ID
                  | 'not' factor
                  | '-' factor
                  | function_call
-
+                 | NUM
 addition_operator: '+' | '-' | 'or'
 multiplication_operator : '*' | 'div' | 'mod' | 'and'
 relational_operator  : '=' | '<>' | '<' | '<=' | '>' | '>='

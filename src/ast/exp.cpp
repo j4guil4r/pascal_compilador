@@ -23,8 +23,15 @@ std::string Exp::binopToStr(BinaryOp op) {
 }
 
 // NumberExp
-NumberExp::NumberExp(int v) : value(v) {}
-int NumberExp::accept(Visitor* visitor) { return visitor->visit(this); }
+NumberExp::NumberExp(std::string num): num(num) {}
+IntExp::IntExp(string num): NumberExp(num) {}
+LongIntExp::LongIntExp(string num): NumberExp(num) {}
+UIntExp::UIntExp(string num): NumberExp(num) {}
+
+int NumberExp::accept(Visitor *visitor) {return visitor->visit(this);}
+int IntExp::accept(Visitor *visitor) { return visitor->visit(this); }
+int LongIntExp::accept(Visitor *visitor) { return visitor->visit(this); }
+int UIntExp::accept(Visitor *visitor) { return visitor->visit(this); }
 
 //BoolExp
 BoolExp::BoolExp(bool v) : value(v) {}

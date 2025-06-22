@@ -150,7 +150,7 @@ int PrintVisitor::visit(UnaryExp* unary) {
 }
 
 int PrintVisitor::visit(NumberExp* number) {
-    cout << number->value;
+    cout << number->num;
     return 0;
 }
 

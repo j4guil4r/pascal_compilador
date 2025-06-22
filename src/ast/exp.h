@@ -4,6 +4,7 @@
 #include <string>
 #include <list>
 #include "../visitors/visitor.h"
+#include <cstdint>
 
 // Operadores binarios
 enum BinaryOp {
@@ -18,13 +19,40 @@ public:
     static std::string binopToStr(BinaryOp op);
 };
 
-// Expresiones básicas
 class NumberExp : public Exp {
 public:
-    int value;
-    NumberExp(int v);
-    int accept(Visitor* visitor) override;
+    string num;
+    NumberExp(string num);
+    virtual string getType() const {return "??";};
+    virtual int accept(Visitor* visitor) override;
+    virtual int64_t getIntValue() const {return stoll(num);}
 };
+
+class IntExp : public NumberExp {
+public:
+    IntExp(string num);
+    string getType() const {return "integer";}
+    int accept(Visitor* visitor) override;
+    int32_t getValue() const {return static_cast<int32_t>(getIntValue());}
+
+};
+
+class LongIntExp : public NumberExp {
+public:
+    LongIntExp(string num);
+    string getType() const {return "longint";}
+    int accept(Visitor* visitor) override;
+    int64_t getValue() const {return static_cast<int64_t>(getIntValue());}
+};
+
+class UIntExp : public NumberExp {
+public:
+    UIntExp(string num);
+    string getType() const {return "unsignedint";}
+    int accept(Visitor* visitor) override;
+    uint32_t getValue() const {return static_cast<uint32_t>(getIntValue());}
+};
+
 
 class BoolExp : public Exp {
 public:
