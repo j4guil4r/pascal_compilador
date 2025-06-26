@@ -226,8 +226,8 @@ FunDec* Parser::parseFunDec() {
                     parametros.push_back(previous->text);
                     contador++;
                 }
-                if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT))) {
-                    cout << "Error: se esperaba un tipo de declaracion despues de ':'." << endl;
+                if (!(match(Token::INTEGER)|match(Token::UNSIGNEDINT)|match(Token::LONGINT)|(match(Token::BOOL)))) {
+                    cout << "Error: se esperaba un tipo de declaracion despues de':'." << endl;
                     exit(1);
                 }
                 for (int i=0;i<contador;i++) {
