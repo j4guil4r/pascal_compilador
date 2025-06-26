@@ -468,7 +468,7 @@ void TypeEvalVisitor::visit(ProcedureCall* procCall) {
     func->cuerpo->accept(this);
 
     if (functionReturnedStack.top()) {
-        cout<<"Error interno: Algo anda mal en las funciones"<<endl;
+        cout<<"Error interno: Algo anda mal en procedure, no deberia retornar nada"<<endl;
     }
     functionReturnedStack.pop();
     functionNameStack.pop();
