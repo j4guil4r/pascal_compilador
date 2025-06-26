@@ -253,7 +253,7 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
             if (val >= 0 && val <= UINT32_MAX) {
                 env.update(varName, uint32_t(val));
             } else {
-                cout << "Error: Valor inválido para 'unsigned' en variable '" << varName << "'" << endl;
+                cout << "Error: Desbordamiento al asignar longint o asignar valor negativo a 'unsigned' en variable '" << varName << "'" << endl;
                 exit(1);
             }
         } else {
