@@ -97,8 +97,7 @@ public:
 class TypeEvalVisitor : public Visitor {
 private:
     Environment env;
-    map<string, pair<vector<string>, string>> functionTable;  // nombre → (tipos_params, tipo_retorno)
-    map<string, FunDec*> functionBodies;
+    map<string, FunDec*> functions;
     stack<bool> functionReturnedStack;
     stack<string> functionNameStack;
     vector<Value> args;

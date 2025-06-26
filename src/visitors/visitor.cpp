@@ -281,12 +281,9 @@ void TypeEvalVisitor::visit(Program* program) {
 }
 
 void TypeEvalVisitor::visit(BlockStmt* block) {
-
-    env.add_level();
     if (block->vardeclist) block->vardeclist->accept(this);
     if (block->fundeclist) block->fundeclist->accept(this);
     if (block->slist) block->slist->accept(this);
-    env.remove_level();
 }
 
 void TypeEvalVisitor::visit(StatementList* statementList) {
@@ -312,20 +309,11 @@ void TypeEvalVisitor::visit(VarDecList* varDecList) {
 }
 
 void TypeEvalVisitor::visit(FunDec* funcDec) {
-    if (functionTable.count(funcDec->nombre)) {
+    if (functions.count(funcDec->nombre)) {
         cout << "Error: Funcion '" << funcDec->nombre << "' ya definida"<<endl;
         exit(1);
     }
-
-    for (const auto& type : funcDec->tipos) {
-        if (type == "void") {
-            cout << "Error: Parametro no puede ser void"<<endl;
-            exit(1);
-        }
-    }
-
-    functionTable[funcDec->nombre] = {funcDec->tipos, funcDec->returnType};
-    functionBodies[funcDec->nombre] = funcDec;
+    functions[funcDec->nombre] = funcDec;
 }
 
 void TypeEvalVisitor::visit(FunList* funcDecList) {
@@ -431,32 +419,25 @@ void TypeEvalVisitor::visit(ForStmt* forStmt) {
 
 
 void TypeEvalVisitor::visit(ProcedureCall* procCall) {
-    if (!functionTable.count(procCall->funcName)) {
+    if (!functions.count(procCall->funcName)) {
         cout << "Error: procedimiento '" << procCall->funcName << "' no declarado" << endl;
         exit(1);
     }
-
-    const auto& [paramTypes, retType] = functionTable[procCall->funcName];
-
-    if (!functionBodies.count(procCall->funcName)) {
-        cout << "Error interno: cuerpo de procedimiento '" << procCall->funcName << "' no encontrado" << endl;
-        exit(1);
-    }
-
     if (procCall->args) {
         procCall->args->accept(this);
     }
 
-    if (args.size() != paramTypes.size()) {
+    FunDec* func = functions[procCall->funcName];
+
+    if (args.size() != func->tipos.size()) {
         cout << "Error: número incorrecto de argumentos para '" << procCall->funcName << "'" << endl;
         exit(1);
     }
 
-    FunDec* func = functionBodies[procCall->funcName];
     env.add_level();
-    for (size_t i = 0; i < paramTypes.size(); ++i) {
+    for (size_t i = 0; i < func->tipos.size(); ++i) {
         const string& paramName = func->parametros[i];
-        const string& paramType = paramTypes[i];
+        const string& paramType = func->tipos[i];
         env.add_var(paramName, paramType);
         checkAssignmentType(paramName, paramType, args[i]);
     }
@@ -469,6 +450,7 @@ void TypeEvalVisitor::visit(ProcedureCall* procCall) {
 
     if (functionReturnedStack.top()) {
         cout<<"Error interno: Algo anda mal en procedure, no deberia retornar nada"<<endl;
+        exit(1);
     }
     functionReturnedStack.pop();
     functionNameStack.pop();
@@ -478,12 +460,10 @@ void TypeEvalVisitor::visit(ProcedureCall* procCall) {
 Value TypeEvalVisitor::visit(NumberExp* number) {
     try {
         int64_t val = std::stoll(number->num);
-
         // Primero intentamos representarlo como int32_t si cabe
         if (val >= INT32_MIN && val <= INT32_MAX) {
             return static_cast<int32_t>(val);
         }
-
         // Si no cabe en int32_t pero sí en int64_t, lo retornamos como longint
         return val;
 
@@ -631,15 +611,8 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
     const string& name = funcCall->funcName;
 
     // Verificación de existencia
-    if (!functionTable.count(name)) {
+    if (!functions.count(name)) {
         cout << "Error: Función '" << name << "' no declarada" << endl;
-        exit(1);
-    }
-
-    auto [paramTypes, returnType] = functionTable[name];
-
-    if (!functionBodies.count(name)) {
-        cout << "Error interno: cuerpo de función '" << name << "' no encontrado" << endl;
         exit(1);
     }
 
@@ -648,12 +621,12 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
         funcCall->args->accept(this);
     }
 
-    if (args.size() != paramTypes.size()) {
+    FunDec* func = functions[name];
+
+    if (args.size() != func->tipos.size()) {
         cout << "Error: número incorrecto de argumentos para '" << name << "'" << endl;
         exit(1);
     }
-
-    FunDec* func = functionBodies[name];
 
     // Preparar entorno de ejecución
     env.add_level();
@@ -661,16 +634,16 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
     functionReturnedStack.push(false);
 
     // Declarar parámetros
-    for (size_t i = 0; i < paramTypes.size(); ++i) {
+    for (size_t i = 0; i < func->tipos.size(); ++i) {
         const string& paramName = func->parametros[i];
-        const string& paramType = paramTypes[i];
+        const string& paramType = func->tipos[i];
         env.add_var(paramName, paramType);
         checkAssignmentType(paramName, paramType, args[i]);
     }
     args.clear();
 
     // Declarar la variable de retorno (con el nombre de la función)
-    env.add_var(name, returnType);
+    env.add_var(name, func->returnType);
 
     // Ejecutar cuerpo
     func->cuerpo->accept(this);
@@ -683,7 +656,7 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
 
     // Obtener el valor de retorno
     if (!env.check(name)) {
-        cout << "Error: la variable de retorno '" << name << "' no existe en el entorno" << endl;
+        cout << "Error interno: la variable de retorno '" << name << "' no existe en el entorno" << endl;
         exit(1);
     }
 
