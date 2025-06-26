@@ -402,35 +402,11 @@ void TypeEvalVisitor::visit(ForStmt* forStmt) {
 
     if (!maybeStart || !maybeEnd) {
         cerr << "Error: Los límites del for no son numéricos válidos." << endl;
-        return;
+        exit(1);
     }
 
     int64_t i = maybeStart.value();
     int64_t to = maybeEnd.value();
-
-    // Función para asignar el valor al tipo correcto
-    auto assign_control_var = [&](int64_t val) {
-        if (controlType == "integer") {
-            if (val >= INT32_MIN && val <= INT32_MAX) {
-                env.update(forStmt->varName, int32_t(val));
-            } else {
-                cout << "Error: Desbordamiento al asignar valor a 'integer' en for" << endl;
-                exit(1);
-            }
-        } else if (controlType == "unsigned") {
-            if (val >= 0 && val <= UINT32_MAX) {
-                env.update(forStmt->varName, uint32_t(val));
-            } else {
-                cout << "Error: Desbordamiento al asignar valor a 'unsigned' en for" << endl;
-                exit(1);
-            }
-        } else if (controlType == "longint") {
-            env.update(forStmt->varName, val);
-        } else {
-            cout << "Error: Tipo inválido '" << controlType << "' para variable de control del for" << endl;
-            exit(1);
-        }
-    };
 
     if (forStmt->isDownto) {
         if (i < to) {
@@ -438,7 +414,7 @@ void TypeEvalVisitor::visit(ForStmt* forStmt) {
             exit(1);
         }
         for (; i >= to; --i) {
-            assign_control_var(i);
+            checkAssignmentType(forStmt->varName, controlType, i);
             forStmt->body->accept(this);
         }
     } else {
@@ -447,12 +423,12 @@ void TypeEvalVisitor::visit(ForStmt* forStmt) {
             exit(1);
         }
         for (; i <= to; ++i) {
-            assign_control_var(i);
+            checkAssignmentType(forStmt->varName, controlType, i);
             forStmt->body->accept(this);
         }
     }
-
 }
+
 
 void TypeEvalVisitor::visit(ProcedureCall* procCall) {
     if (!functionTable.count(procCall->funcName)) {
