@@ -42,16 +42,13 @@ int main(int argc, const char* argv[]) {
 
         cout << "Iniciando Visitor:" << endl;
         PrintVisitor printVisitor;
-        //EVALVisitor evalVisitorf;
-        //TypeVisitor typeVisitor;
-        cout << "VERIFICANDO:" << endl;
-        //typeVisitor.check(program);
+        TypeEvalVisitor TypeEvalVisitor;
         cout << endl;
         cout << "IMPRIMIR:" << endl;
         printVisitor.visit(program);
         cout  << endl;
-        cout << "EJECUTAR:" << endl;
-        //evalVisitor.ejecutar(program);
+        cout << "VERIFICANDO Y EJECUTANDO" << endl;
+        TypeEvalVisitor.visit(program);
         delete program;
     } catch (const exception& e) {
         cout << "Error durante la ejecución: " << e.what() << endl;

@@ -80,7 +80,7 @@ Token* Scanner::nextToken() {
         else if (word == "longint") {
             token = new Token(Token::LONGINT, word, 0, word.length());
         }
-        else if (word == "unsignedint") {
+        else if (word == "unsigned") {
             token = new Token(Token::UNSIGNEDINT, word, 0, word.length());
         }
         else if (word == "procedure") {

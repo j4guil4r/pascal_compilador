@@ -1,6 +1,7 @@
 #ifndef PASCAL_COMPILADOR_EXP_H
 #define PASCAL_COMPILADOR_EXP_H
 
+#include <cstdint>
 #include <string>
 #include <list>
 #include "../visitors/visitor.h"
@@ -14,30 +15,30 @@ class Exp {
 public:
     bool tieneParen = false;
     virtual ~Exp() = 0;
-    virtual int accept(Visitor* visitor) = 0;
+    virtual Value accept(Visitor* visitor) = 0;
     static std::string binopToStr(BinaryOp op);
 };
 
 // Expresiones básicas
 class NumberExp : public Exp {
 public:
-    int value;
-    NumberExp(int v);
-    int accept(Visitor* visitor) override;
+    string num;
+    NumberExp(const string& num);
+    Value accept(Visitor* visitor) override;
 };
 
 class BoolExp : public Exp {
 public:
     bool value;
     BoolExp(bool v);
-    int accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class IdentifierExp : public Exp {
 public:
     std::string name;
     IdentifierExp(const std::string& name);
-    int accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 // Expresiones compuestas
@@ -47,7 +48,7 @@ public:
     Exp* right;
     BinaryOp op;
     BinaryExp(Exp* l, Exp* r, BinaryOp op);
-    int accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
     ~BinaryExp();
 };
 
@@ -56,7 +57,7 @@ public:
     Exp* expr;
     std::string op; // "-" o "not"
     UnaryExp(Exp* e, const std::string& op);
-    int accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
     ~UnaryExp();
 };
 
@@ -66,7 +67,7 @@ public:
     ExpList* args;
     FunctionCallExp(const std::string& name);
     FunctionCallExp(const std::string& name, ExpList* args);
-    int accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
     ~FunctionCallExp();
 };
 

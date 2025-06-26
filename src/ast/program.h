@@ -39,7 +39,7 @@ class FunDec {
 public:
     std::string nombre;
     std::string returnType;
-    std::list<std::string> parametros;
+    std::vector<std::string> parametros;
     std::vector<std::string> tipos;
     BlockStmt* cuerpo;
     FunDec(std::string nombre,std::string returnType,BlockStmt* cuerpo);

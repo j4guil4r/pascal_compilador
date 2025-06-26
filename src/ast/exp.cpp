@@ -23,26 +23,29 @@ std::string Exp::binopToStr(BinaryOp op) {
 }
 
 // NumberExp
-NumberExp::NumberExp(int v) : value(v) {}
-int NumberExp::accept(Visitor* visitor) { return visitor->visit(this); }
+NumberExp::NumberExp(const string& num): num(num) {}
+Value NumberExp::accept(Visitor *visitor) {
+    return visitor->visit(this);
+}
+
 
 //BoolExp
 BoolExp::BoolExp(bool v) : value(v) {}
-int BoolExp::accept(Visitor* visitor) { return visitor->visit(this); }
+Value BoolExp::accept(Visitor* visitor) { return visitor->visit(this); }
 
 // IdentifierExp
 IdentifierExp::IdentifierExp(const std::string& name) : name(name) {}
-int IdentifierExp::accept(Visitor* visitor) { return visitor->visit(this); }
+Value IdentifierExp::accept(Visitor* visitor) { return visitor->visit(this); }
 
 // BinaryExp
 BinaryExp::BinaryExp(Exp* l, Exp* r, BinaryOp op) : left(l), right(r), op(op) {}
 BinaryExp::~BinaryExp() { delete left; delete right; }
-int BinaryExp::accept(Visitor* visitor) { return visitor->visit(this); }
+Value BinaryExp::accept(Visitor* visitor) { return visitor->visit(this); }
 
 // UnaryExp
 UnaryExp::UnaryExp(Exp* e, const std::string& op) : expr(e), op(op) {}
 UnaryExp::~UnaryExp() { delete expr; }
-int UnaryExp::accept(Visitor* visitor) { return visitor->visit(this); }
+Value UnaryExp::accept(Visitor* visitor) { return visitor->visit(this); }
 
 // FunctionCallExp
 FunctionCallExp::FunctionCallExp(const std::string& name):funcName(name){}
@@ -52,7 +55,7 @@ FunctionCallExp::FunctionCallExp(const std::string& name, ExpList* args): funcNa
 FunctionCallExp::~FunctionCallExp() {
     delete args;
 }
-int FunctionCallExp::accept(Visitor* visitor) { return visitor->visit(this); }
+Value FunctionCallExp::accept(Visitor* visitor) { return visitor->visit(this); }
 
 // ExpList
 ExpList::ExpList() {}

@@ -144,7 +144,7 @@ FunDec* Parser::parseFunDec() {
         returntype = "void";
         match(Token::ID);
         nombre = previous->text;
-        list<string> parametros;
+        vector<string> parametros;
         vector<string> tipos;
         if (match(Token::PI)) {
             int contador;
@@ -207,7 +207,7 @@ FunDec* Parser::parseFunDec() {
     else if (match(Token::FUNCTION)) {
         match(Token::ID);
         nombre = previous->text;
-        list<string> parametros;
+        vector<string> parametros;
         vector<string> tipos;
         if (match(Token::PI)) {
             int contador;
@@ -498,7 +498,8 @@ Exp* Parser::parseFactor() {
         return new BoolExp(0);
     }
     else if (match(Token::NUM)) {
-        return new NumberExp(stoi(previous->text));
+        string value = previous->text;
+        return new NumberExp(value);
     }
     else if (match(Token::ID)) {
         string s = previous->text;
@@ -531,6 +532,12 @@ Exp* Parser::parseFactor() {
         return e;
     }
     else if (match(Token::MINUS)){
+        string s = previous->text;
+        Exp* a = parseFactor();
+        e = new UnaryExp(a,s);
+        return e;
+    }
+    else if (match(Token::PLUS)){
         string s = previous->text;
         Exp* a = parseFactor();
         e = new UnaryExp(a,s);

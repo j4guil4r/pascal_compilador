@@ -63,7 +63,7 @@ public:
 
 class ProcedureCall : public Stmt {
 public:
-    std::string funcName;
+    string funcName;
     ExpList* args;
     ProcedureCall(std::string funcName);
     ProcedureCall(const std::string& name, ExpList* args);

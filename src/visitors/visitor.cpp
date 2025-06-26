@@ -119,7 +119,7 @@ void PrintVisitor::visit(ForStmt* forStmt) {
 }
 
 
-int PrintVisitor::visit(BinaryExp* binary) {
+Value PrintVisitor::visit(BinaryExp* binary) {
     if(binary->tieneParen) cout << '(';
     binary->left->accept(this);
     switch (binary->op) {
@@ -142,29 +142,29 @@ int PrintVisitor::visit(BinaryExp* binary) {
     return 0;
 }
 
-int PrintVisitor::visit(UnaryExp* unary) {
+Value PrintVisitor::visit(UnaryExp* unary) {
     if (unary->op == "not") cout << "not ";
     else cout << unary->op;
     unary->expr->accept(this);
     return 0;
 }
 
-int PrintVisitor::visit(NumberExp* number) {
-    cout << number->value;
+Value PrintVisitor::visit(NumberExp* number) {
+    cout << number->num;
     return 0;
 }
 
-int PrintVisitor::visit(BoolExp* boolExp) {
+Value PrintVisitor::visit(BoolExp* boolExp) {
     cout << (boolExp->value ? "true" : "false");
     return 0;
 }
 
-int PrintVisitor::visit(IdentifierExp* id) {
+Value PrintVisitor::visit(IdentifierExp* id) {
     cout << id->name;
     return 0;
 }
 
-int PrintVisitor::visit(ExpList* expList) {
+Value PrintVisitor::visit(ExpList* expList) {
     bool first = true;
     for (auto exp : expList->exps) {
         if (!first) cout << ", ";
@@ -175,7 +175,7 @@ int PrintVisitor::visit(ExpList* expList) {
 }
 
 
-int PrintVisitor::visit(FunctionCallExp* funcCall) {
+Value PrintVisitor::visit(FunctionCallExp* funcCall) {
     cout << funcCall->funcName;
     if (funcCall->args && !funcCall->args->exps.empty()) {
         cout << "(";
@@ -195,351 +195,493 @@ void PrintVisitor::visit(ProcedureCall* procCall) {
     }
 }
 
-
-//===========================================================================//
-//AUX TV:
-bool TypeVisitor::isNumericType(int type) {
-    return type == TYPE_INTEGER || type == TYPE_LONGINT || type == TYPE_UNSIGNEDINT;
+optional<int64_t> TypeEvalVisitor::extractInt64(const Value& v) {
+    if (holds_alternative<int32_t>(v)) return static_cast<int64_t>(get<int32_t>(v));
+    if (holds_alternative<uint32_t>(v)) return static_cast<int64_t>(get<uint32_t>(v));
+    if (holds_alternative<int64_t>(v)) return get<int64_t>(v);
+    return nullopt;
 }
 
-int TypeVisitor::getResultType(int leftType, int rightType) {
-    // Si ambos son iguales, conserva el tipo
-    if (leftType == rightType) return leftType;
-
-    // Reglas de promoción de tipos
-    if (leftType == TYPE_LONGINT || rightType == TYPE_LONGINT) {
-        return TYPE_LONGINT;
+void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& type, const Value& value) {
+    if (type == "integer") {
+        if (holds_alternative<int32_t>(value)) {
+            env.update(varName, value);
+        } else if (holds_alternative<int64_t>(value)) {
+            int64_t val = get<int64_t>(value);
+            if (val >= INT32_MIN && val <= INT32_MAX) {
+                env.update(varName, int32_t(val));
+            } else {
+                cout << "Error: Desbordamiento al asignar longint a integer"<<endl;
+                exit(1);
+            }
+        } else if (holds_alternative<uint32_t>(value)) {
+            uint32_t val = get<uint32_t>(value);
+            if (val <= INT32_MAX) {
+                env.update(varName, int32_t(val));
+            } else {
+                cout << "Error: Desbordamiento al asignar unsigned a integer"<<endl;
+                exit(1);
+            }
+        } else {
+            cout << "Error: No se puede asignar tipo no numérico a 'integer'"<<endl;
+            exit(1);
+        }
+    } else if (type == "longint") {
+        if (holds_alternative<int64_t>(value)) {
+            env.update(varName, value);
+        } else if (holds_alternative<int32_t>(value)) {
+            env.update(varName, int64_t(get<int32_t>(value)));
+        } else if (holds_alternative<uint32_t>(value)) {
+            env.update(varName, int64_t(get<uint32_t>(value)));
+        } else {
+            cout << "Error: No se puede asignar tipo no numérico a 'longint'"<<endl;
+            exit(1);
+        }
+    } else if (type == "unsigned") {
+        if (holds_alternative<uint32_t>(value)) {
+            env.update(varName, value);
+        } else if (holds_alternative<int32_t>(value)) {
+            int32_t val = get<int32_t>(value);
+            if (val >= 0) {
+                env.update(varName, uint32_t(val));
+            } else {
+                cout << "Error: No se puede asignar valor negativo a 'unsigned'"<<endl;
+                exit(1);
+            }
+        } else if (holds_alternative<int64_t>(value)) {
+            int64_t val = get<int64_t>(value);
+            if (val >= 0 && val <= UINT32_MAX) {
+                env.update(varName, uint32_t(val));
+            } else {
+                cout << "Error: Valor inválido para 'unsigned'"<<endl;
+                exit(1);
+            }
+        } else {
+            cout << "Error: No se puede asignar tipo no numérico a 'unsigned'"<<endl;
+            exit(1);
+        }
+    } else if (type == "boolean") {
+        if (holds_alternative<bool>(value)) {
+            env.update(varName, value);
+        } else {
+            cout << "Error: Se esperaba tipo boolean en asignación"<<endl;
+            exit(1);
+        }
+    } else {
+        cout << "Error: Tipo desconocido '" << type << "'"<<endl;
+        exit(1);
     }
-    if (leftType == TYPE_UNSIGNEDINT || rightType == TYPE_UNSIGNEDINT) {
-        return TYPE_UNSIGNEDINT;
-    }
-    return TYPE_INTEGER;
 }
 
-string TypeVisitor::typeToString(int type) {
-    switch(type) {
-        case TYPE_INTEGER: return "integer";
-        case TYPE_LONGINT: return "longint";
-        case TYPE_UNSIGNEDINT: return "unsignedint";
-        case TYPE_BOOLEAN: return "boolean";
-        case TYPE_VOID: return "void";
-        default: return "unknown";
-    }
-}
-
-//--------------------------------------------------------------------------//
-void TypeVisitor::visit(Program* program) {
+void TypeEvalVisitor::visit(Program* program) {
     env.add_level();
     program->body->accept(this);
     env.remove_level();
 }
 
-void TypeVisitor::visit(BlockStmt* block) {
-    env.add_level();
+void TypeEvalVisitor::visit(BlockStmt* block) {
 
+    env.add_level();
     if (block->vardeclist) block->vardeclist->accept(this);
     if (block->fundeclist) block->fundeclist->accept(this);
     if (block->slist) block->slist->accept(this);
-
     env.remove_level();
 }
 
-void TypeVisitor::visit(StatementList* statementList) {
+void TypeEvalVisitor::visit(StatementList* statementList) {
     for (auto stmt : statementList->stms) {
         stmt->accept(this);
     }
 }
 
-void TypeVisitor::visit(VarDec* vd) {
+void TypeEvalVisitor::visit(VarDec* vd) {
     for (const auto& var : vd->vars) {
         if (env.check(var)) {
-            cerr << "Error semántico: Variable '" << var << "' ya declarada" << endl;
-            continue;
+            cout << "Error: Variable '" << var << "' ya declarada"<<endl;
+            exit(1);
         }
         env.add_var(var, vd->type);
     }
 }
 
-void TypeVisitor::visit(VarDecList* varDecList) {
+void TypeEvalVisitor::visit(VarDecList* varDecList) {
     for (auto vd : varDecList->vardecs) {
         vd->accept(this);
     }
 }
 
-void TypeVisitor::visit(FunDec* funcDec) {
+void TypeEvalVisitor::visit(FunDec* funcDec) {
+    if (functionTable.count(funcDec->nombre)) {
+        cout << "Error: Funcion '" << funcDec->nombre << "' ya definida"<<endl;
+        exit(1);
+    }
 
     for (const auto& type : funcDec->tipos) {
         if (type == "void") {
-            cerr << "Error: Parámetro no puede ser de tipo void" << endl;
+            cout << "Error: Parametro no puede ser void"<<endl;
+            exit(1);
         }
     }
 
-    // Registrar función en la tabla
-    functionTable[funcDec->nombre] = make_pair(funcDec->tipos, funcDec->returnType);
-    retornoFuncActual = funcDec->returnType;
+    functionTable[funcDec->nombre] = {funcDec->tipos, funcDec->returnType};
+    functionBodies[funcDec->nombre] = funcDec;
+}
 
-    // Nuevo ámbito para parámetros y locales
-    env.add_level();
-
-    // Registrar parámetros
-    auto pIt = funcDec->parametros.begin();
-    auto tIt = funcDec->tipos.begin();
-    while (pIt != funcDec->parametros.end() && tIt != funcDec->tipos.end()) {
-        env.add_var(*pIt, *tIt);
-        ++pIt;
-        ++tIt;
-    }
-
-    // Procesar cuerpo
-    funcDec->cuerpo->accept(this);
-
-    // Verificar que las funciones no void tengan return
-    if (funcDec->returnType != "void") {
-        // Aquí deberías verificar que haya al menos un return
-        // (necesitarías un atributo adicional para rastrear esto)
-    }
-
-    env.remove_level();
-} // <----- REVISAR
-
-void TypeVisitor::visit(FunList* funcDecList) {
-    for (auto funcDec : funcDecList->Fundcs) {
-        funcDec->accept(this);
+void TypeEvalVisitor::visit(FunList* funcDecList) {
+    for (auto func : funcDecList->Fundcs) {
+        func->accept(this);
     }
 }
 
-void TypeVisitor::visit(AssignStmt* assign) {
+void TypeEvalVisitor::visit(AssignStmt* assign) {
     if (!env.check(assign->varName)) {
-        cerr << "Error semántico: Variable '" << assign->varName << "' no declarada" << endl;
-        return;
+        cout << "Error: Variable '" << assign->varName << "' no declarada" << std::endl;
+        exit(1);
     }
 
-    string varType = env.lookup_type(assign->varName);
-    int exprType = assign->expr->accept(this);
-    string exprTypeStr = typeToString(exprType);
+    string type = env.lookup_type(assign->varName);
+    Value value = assign->expr->accept(this);
+    checkAssignmentType(assign->varName, type, value);
 
-    if (varType != exprTypeStr) {
-        cerr << "Error de tipos: No se puede asignar " << exprTypeStr << " a '" << assign->varName << "' de tipo " << varType << endl;
+    if (!functionNameStack.empty() && assign->varName == functionNameStack.top()) {
+        functionReturnedStack.top()=true;
     }
 }
 
-void TypeVisitor::visit(PrintStmt* print) {
+void TypeEvalVisitor::visit(PrintStmt* print) {
     if (print->expressions) {
-        for (auto exp : print->expressions->exps) {
-            exp->accept(this);
+        print->expressions->accept(this);
+        for (auto result:args) {
+            printValue(result);
+            cout<<" ";
         }
     }
+    cout << endl;
 }
 
-void TypeVisitor::visit(IfStmt* ifStmt) {
-    int condType = ifStmt->condition->accept(this);
-    if (condType != TYPE_BOOLEAN) {
-        cerr << "Error de tipos: La condición del if debe ser booleana" << endl;
+void TypeEvalVisitor::visit(IfStmt* ifStmt) {
+    Value cond = ifStmt->condition->accept(this);
+    if (!holds_alternative<bool>(cond)) {
+        cout << "Error: condición del while no es booleana" << std::endl;
+        exit(1);
     }
 
-    ifStmt->thenBlock->accept(this);
-    if (ifStmt->elseBlock) {
+    if (get<bool>(cond)) {
+        ifStmt->thenBlock->accept(this);
+    } else if (ifStmt->elseBlock) {
         ifStmt->elseBlock->accept(this);
     }
 }
 
-void TypeVisitor::visit(WhileStmt* whileStmt) {
-    int condType = whileStmt->condition->accept(this);
-    if (condType != TYPE_BOOLEAN) {
-        cerr << "Error de tipos: La condición del while debe ser booleana" << endl;
+void TypeEvalVisitor::visit(WhileStmt* whileStmt) {
+    while (true) {
+        Value cond = whileStmt->condition->accept(this);
+        if (!holds_alternative<bool>(cond)) {
+            cout << "Error: condición del while no es booleana" << std::endl;
+            exit(1);
+        }
+        if (!get<bool>(cond)) break;
+        whileStmt->body->accept(this);
     }
-    whileStmt->body->accept(this);
 }
 
-void TypeVisitor::visit(ForStmt* forStmt) {
+void TypeEvalVisitor::visit(ForStmt* forStmt) {
     if (!env.check(forStmt->varName)) {
-        cerr << "Error semántico: Variable de control '" << forStmt->varName << "' no declarada" << endl;
-    }
-    else {
-        string varType = env.lookup_type(forStmt->varName);
-        if (varType != "integer" && varType != "longint") {
-            cerr << "Error de tipos: Variable de control '" << forStmt->varName << "' debe ser integer o longint" << endl;
-        }
+        cout << "Error: Variable de control '" << forStmt->varName << "' no declarada" << endl;
+        exit(1);
     }
 
-    int startType = forStmt->startValue->accept(this);
-    int endType = forStmt->endValue->accept(this);
+    string controlType = env.lookup_type(forStmt->varName);
 
-    if (!isNumericType(startType) || !isNumericType(endType)) {
-        cerr << "Error de tipos: Límites del for deben ser numéricos" << endl;
-    }
+    Value start = forStmt->startValue->accept(this);
+    Value end = forStmt->endValue->accept(this);
 
-    forStmt->body->accept(this);
-}
+    optional<int64_t> maybeStart = extractInt64(start);
+    optional<int64_t> maybeEnd = extractInt64(end);
 
-int TypeVisitor::visit(BinaryExp* binary) {
-    int leftType = binary->left->accept(this);
-    int rightType = binary->right->accept(this);
-
-    switch(binary->op) {
-        case PLUS_OP: case MINUS_OP: case MUL_OP: case DIV_OP: case MOD_OP:
-            // Operaciones aritméticas
-            if (!isNumericType(leftType) || !isNumericType(rightType)) {
-                cerr << "Error: Operación aritmética con tipos no numéricos" << endl;
-                return TYPE_UNKNOWN;
-            }
-            return getResultType(leftType, rightType);
-
-        case AND_OP: case OR_OP:
-            // Operaciones lógicas
-            if (leftType != TYPE_BOOLEAN || rightType != TYPE_BOOLEAN) {
-                cerr << "Error: Operación lógica con tipos no booleanos" << endl;
-                return TYPE_UNKNOWN;
-            }
-            return TYPE_BOOLEAN;
-
-        case EQ_OP: case NEQ_OP:
-            // Igualdad/desigualdad
-            if ((leftType == TYPE_BOOLEAN && rightType != TYPE_BOOLEAN) ||
-                (rightType == TYPE_BOOLEAN && leftType != TYPE_BOOLEAN)) {
-                cerr << "Error: Comparación entre boolean y no boolean" << endl;
-                return TYPE_UNKNOWN;
-            }
-            return TYPE_BOOLEAN;
-
-        case LT_OP: case LE_OP: case GT_OP: case GE_OP:
-            // Comparaciones
-            if (!isNumericType(leftType) || !isNumericType(rightType)) {
-                cerr << "Error: Comparación con tipos no numéricos" << endl;
-                return TYPE_UNKNOWN;
-            }
-            return TYPE_BOOLEAN;
-    }
-    return TYPE_UNKNOWN;
-}
-
-int TypeVisitor::visit(UnaryExp* unary) {
-    int exprType = unary->expr->accept(this);
-
-    if (unary->op == "not") {
-        if (exprType != TYPE_BOOLEAN) {
-            cerr << "Error: Operador 'not' requiere operando booleano" << endl;
-            return TYPE_UNKNOWN;
-        }
-        return TYPE_BOOLEAN;
-    }
-    else { // Operador -
-        if (!isNumericType(exprType)) {
-            cerr << "Error: Operador '-' requiere operando numérico" << endl;
-            return TYPE_UNKNOWN;
-        }
-        if (exprType == TYPE_UNSIGNEDINT) {
-            cerr << "Unsigned int no lleva signo" << endl;
-            return TYPE_UNKNOWN;
-        }
-        return exprType; // Conserva el tipo (integer, longint, etc)
-    }
-}
-
-int TypeVisitor::visit(NumberExp* number) {
-    //return 1; // integer
-    return TYPE_INTEGER;
-}
-
-int TypeVisitor::visit(BoolExp* boolExp) {
-    //return 2; // boolean
-    return TYPE_BOOLEAN;
-}
-
-int TypeVisitor::visit(IdentifierExp* id) {
-    if (!env.check(id->name)) {
-        cerr << "Error semántico: Variable '" << id->name << "' no declarada" << endl;
-        return 0; // tipo desconocido
-    }
-
-    string type = env.lookup_type(id->name);
-    return (type == "integer") ? 1 :
-           (type == "boolean") ? 2 : 0;
-}
-
-int TypeVisitor::visit(ExpList* expList) {
-    // Verificamos cada expresión pero retornamos el tipo del último elemento
-    int lastType = 0;
-    for (auto exp : expList->exps) {
-        lastType = exp->accept(this);
-    }
-    return lastType;
-}
-
-int TypeVisitor::visit(FunctionCallExp* funcCall) {
-    if (!functionTable.count(funcCall->funcName)) {
-        cerr << "Error semántico: Función '" << funcCall->funcName << "' no declarada" << endl;
-        return 0;
-    }
-
-    auto& funcInfo = functionTable[funcCall->funcName];
-    const auto& paramTypes = funcInfo.first;
-
-    // Verificar número de parámetros
-    if (funcCall->args && funcCall->args->exps.size() != paramTypes.size()) {
-        cerr << "Error semántico: Número incorrecto de argumentos para '"
-             << funcCall->funcName << "' (esperaba " << paramTypes.size()
-             << ", obtuvo " << funcCall->args->exps.size() << ")" << endl;
-        return 0;
-    }
-
-    // Verificar tipos de parámetros
-    if (funcCall->args) {
-        size_t i = 0;
-        for (auto exp : funcCall->args->exps) {
-            int argType = exp->accept(this);
-            string expectedType = paramTypes[i];
-            string actualType = (argType == 1) ? "integer" :
-                                (argType == 2) ? "boolean" : "unknown";
-
-            if (expectedType != actualType) {
-                cerr << "Error de tipos: Argumento " << (i+1) << " de '"
-                     << funcCall->funcName << "' debería ser " << expectedType
-                     << " pero es " << actualType << endl;
-            }
-            i++;
-        }
-    }
-
-    // Retornar el tipo de retorno de la función
-    return (funcInfo.second == "integer") ? 1 :
-           (funcInfo.second == "boolean") ? 2 : 0;
-}
-
-void TypeVisitor::visit(ProcedureCall* procCall) {
-    if (!functionTable.count(procCall->funcName)) {
-        cerr << "Error semántico: Procedimiento '" << procCall->funcName << "' no declarado" << endl;
+    if (!maybeStart || !maybeEnd) {
+        cerr << "Error: Los límites del for no son numéricos válidos." << endl;
         return;
     }
 
-    auto& procInfo = functionTable[procCall->funcName];
+    int64_t i = maybeStart.value();
+    int64_t to = maybeEnd.value();
 
-    // Verificar que sea un procedimiento (retorno void)
-    if (procInfo.second != "void") {
-        cerr << "Error semántico: '" << procCall->funcName << "' es una función, no un procedimiento" << endl;
-    }
-
-    // Verificación de parámetros (similar a FunctionCallExp)
-    if (procCall->args) {
-        if (procCall->args->exps.size() != procInfo.first.size()) {
-            cerr << "Error semántico: Número incorrecto de argumentos para '"
-                 << procCall->funcName << "'" << endl;
-            return;
-        }
-
-        size_t i = 0;
-        for (auto exp : procCall->args->exps) {
-            int argType = exp->accept(this);
-            string expectedType = procInfo.first[i];
-            string actualType = (argType == 1) ? "integer" :
-                                (argType == 2) ? "boolean" : "unknown";
-
-            if (expectedType != actualType) {
-                cerr << "Error de tipos: Argumento " << (i+1) << " de '"
-                     << procCall->funcName << "' debería ser " << expectedType
-                     << " pero es " << actualType << endl;
+    // Función para asignar el valor al tipo correcto
+    auto assign_control_var = [&](int64_t val) {
+        if (controlType == "integer") {
+            if (val >= INT32_MIN && val <= INT32_MAX) {
+                env.update(forStmt->varName, int32_t(val));
+            } else {
+                cout << "Error: Desbordamiento al asignar valor a 'integer' en for" << endl;
+                exit(1);
             }
-            i++;
+        } else if (controlType == "unsigned") {
+            if (val >= 0 && val <= UINT32_MAX) {
+                env.update(forStmt->varName, uint32_t(val));
+            } else {
+                cout << "Error: Desbordamiento al asignar valor a 'unsigned' en for" << endl;
+                exit(1);
+            }
+        } else if (controlType == "longint") {
+            env.update(forStmt->varName, val);
+        } else {
+            cout << "Error: Tipo inválido '" << controlType << "' para variable de control del for" << endl;
+            exit(1);
+        }
+    };
+
+    if (forStmt->isDownto) {
+        if (i < to) {
+            cout << "Error: En 'downto', el valor inicial (" << i << ") debe ser mayor o igual al final (" << to << ")" << endl;
+            exit(1);
+        }
+        for (; i >= to; --i) {
+            assign_control_var(i);
+            forStmt->body->accept(this);
+        }
+    } else {
+        if (i > to) {
+            cout << "Error: En 'to', el valor inicial (" << i << ") debe ser menor o igual al final (" << to << ")" << endl;
+            exit(1);
+        }
+        for (; i <= to; ++i) {
+            assign_control_var(i);
+            forStmt->body->accept(this);
         }
     }
+
+}
+
+void TypeEvalVisitor::visit(ProcedureCall* procCall) {
+    if (!functionTable.count(procCall->funcName)) {
+        cout << "Error: procedimiento '" << procCall->funcName << "' no declarado" << endl;
+        exit(1);
+    }
+
+    const auto& [paramTypes, retType] = functionTable[procCall->funcName];
+
+    if (!functionBodies.count(procCall->funcName)) {
+        cout << "Error interno: cuerpo de procedimiento '" << procCall->funcName << "' no encontrado" << endl;
+        exit(1);
+    }
+
+    if (procCall->args) {
+        procCall->args->accept(this);
+    }
+
+    if (args.size() != paramTypes.size()) {
+        cout << "Error: número incorrecto de argumentos para '" << procCall->funcName << "'" << endl;
+        exit(1);
+    }
+
+    FunDec* func = functionBodies[procCall->funcName];
+    env.add_level();
+    for (size_t i = 0; i < paramTypes.size(); ++i) {
+        const string& paramName = func->parametros[i];
+        const string& paramType = paramTypes[i];
+        env.add_var(paramName, paramType);
+        checkAssignmentType(paramName, paramType, args[i]);
+    }
+    args.clear();
+
+    functionReturnedStack.push(false);
+    functionNameStack.push(procCall->funcName);
+
+    func->cuerpo->accept(this);
+
+    if (functionReturnedStack.top()) {
+        cout<<"Error interno: Algo anda mal en las funciones"<<endl;
+    }
+    functionReturnedStack.pop();
+    functionNameStack.pop();
+    env.remove_level();
+}
+
+Value TypeEvalVisitor::visit(NumberExp* number) {
+    try {
+        int64_t val = std::stoll(number->num);
+        if (val >= INT32_MIN && val <= INT32_MAX) {
+            return int32_t(val);
+        } else {
+            return val;
+        }
+    } catch (...) {
+        cout << "Error: Número inválido '" << number->num << "'" << endl;
+        exit(1);
+    }
+}
+
+Value TypeEvalVisitor::visit(BoolExp* boolExp) {
+    return boolExp->value;
+}
+
+Value TypeEvalVisitor::visit(IdentifierExp* id) {
+    if (!env.check(id->name)) {
+        cout << "Error: Variable '" << id->name << "' no declarada" << endl;
+        exit(1);
+    }
+    return env.lookup(id->name);
+}
+
+Value TypeEvalVisitor::visit(UnaryExp* unary) {
+    Value val = unary->expr->accept(this);
+    if (unary->op == "not") {
+        if (std::holds_alternative<bool>(val)) {
+            return !std::get<bool>(val);
+        }
+        cout << "Error: 'not' requiere una expresión booleana" << endl;
+        exit(1);
+    } else if (unary->op == "-") {
+        if (holds_alternative<int32_t>(val)) return -get<int32_t>(val);
+        if (holds_alternative<int64_t>(val)) return -get<int64_t>(val);
+        cout << "Error: '-' sólo puede aplicarse a valores numéricos" << endl;
+        exit(1);
+    }
+    else if (unary->op == "+") {
+        if (holds_alternative<int32_t>(val)) return get<int32_t>(val);
+        if (holds_alternative<int64_t>(val)) return get<int64_t>(val);
+        cout << "Error: '+' sólo puede aplicarse a valores numéricos" << endl;
+        exit(1);
+    }
+    cout << "Error: Operador unario desconocido '" << unary->op << "'" << endl;
+    exit(1);
+}
+
+Value TypeEvalVisitor::visit(BinaryExp* binary) {
+    Value lhs = binary->left->accept(this);
+    Value rhs = binary->right->accept(this);
+    auto l = extractInt64(lhs), r = extractInt64(rhs);
+    string op = binary->binopToStr(binary->op);
+
+    if (op == "+" || op == "-" || op == "*" || op == "div" || op == "mod") {
+        if (!l || !r) {
+            cout << "Error: operación aritmética requiere valores numéricos" << endl;
+            exit(1);
+        }
+        if (op == "+") return *l + *r;
+        if (op == "-") return *l - *r;
+        if (op == "*") return *l * *r;
+        if (op == "div") {
+            if (*r == 0) {
+                cout << "Error: división por cero" << endl;
+                exit(1);
+            }
+            return *l / *r;
+        }
+        if (op == "mod") {
+            if (*r == 0) {
+                cout << "Error: módulo por cero" << endl;
+                exit(1);
+            }
+            return *l % *r;
+        }
+    }
+
+    if (op == "and" || op == "or") {
+        if (!holds_alternative<bool>(lhs) || !holds_alternative<bool>(rhs)) {
+            cout << "Error: operación lógica requiere booleanos" <<endl;
+            exit(1);
+        }
+        if (op == "and") return get<bool>(lhs) && get<bool>(rhs);
+        if (op == "or") return get<bool>(lhs) || get<bool>(rhs);
+    }
+
+    if (!l || !r) {
+        cout << "Error: comparación requiere valores numéricos" <<endl;
+        exit(1);
+    }
+    if (op == "=") return *l == *r;
+    if (op == "<>") return *l != *r;
+    if (op == "<") return *l < *r;
+    if (op == "<=") return *l <= *r;
+    if (op == ">") return *l > *r;
+    if (op == ">=") return *l >= *r;
+
+    cout << "Error: operador binario desconocido '" << op << "'" << endl;
+    exit(1);
+}
+
+Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
+    const string& name = funcCall->funcName;
+
+    // Verificación de existencia
+    if (!functionTable.count(name)) {
+        cout << "Error: Función '" << name << "' no declarada" << endl;
+        exit(1);
+    }
+
+    auto [paramTypes, returnType] = functionTable[name];
+
+    if (!functionBodies.count(name)) {
+        cout << "Error interno: cuerpo de función '" << name << "' no encontrado" << endl;
+        exit(1);
+    }
+
+    // Evaluar argumentos
+    if (funcCall->args) {
+        funcCall->args->accept(this);
+    }
+
+    if (args.size() != paramTypes.size()) {
+        cout << "Error: número incorrecto de argumentos para '" << name << "'" << endl;
+        exit(1);
+    }
+
+    FunDec* func = functionBodies[name];
+
+    // Preparar entorno de ejecución
+    env.add_level();
+    functionNameStack.push(name);
+    functionReturnedStack.push(false);
+
+    // Declarar parámetros
+    for (size_t i = 0; i < paramTypes.size(); ++i) {
+        const string& paramName = func->parametros[i];
+        const string& paramType = paramTypes[i];
+        env.add_var(paramName, paramType);
+        checkAssignmentType(paramName, paramType, args[i]);
+    }
+    args.clear();
+
+    // Declarar la variable de retorno (con el nombre de la función)
+    env.add_var(name, returnType);
+
+    // Ejecutar cuerpo
+    func->cuerpo->accept(this);
+
+    // Verificar si se retornó explícitamente
+    if (!functionReturnedStack.top()) {
+        cout << "Error: la función '" << name << "' no retornó ningún valor" << endl;
+        exit(1);
+    }
+
+    // Obtener el valor de retorno
+    if (!env.check(name)) {
+        cout << "Error: la variable de retorno '" << name << "' no existe en el entorno" << endl;
+        exit(1);
+    }
+
+    Value result = env.lookup(name);
+
+    // Limpiar contexto
+    functionReturnedStack.pop();
+    functionNameStack.pop();
+    env.remove_level();
+
+    return result;
+}
+
+
+Value TypeEvalVisitor::visit(ExpList* expList) {
+    args.clear();
+    for (auto arg : expList->exps) {
+        args.push_back(arg->accept(this));
+    }
+    return 0;
+}
+void TypeEvalVisitor::printValue(const Value& val) {
+    std::visit([](const auto& v) {
+        cout << v;
+    }, val);
 }

@@ -7,8 +7,10 @@
 
 #include <string>
 #include <list>
+#include <optional>
 #include "../enviroment/enviroment.h"
 #include <map>
+#include <stack>
 
 class Program;
 class BlockStmt;
@@ -30,6 +32,7 @@ class StatementList;
 class ProcedureCall;
 class ExpList;
 class BoolExp;
+class Exp;
 
 class Visitor {
 public:
@@ -57,13 +60,13 @@ public:
     virtual void visit(ProcedureCall* Procedurecall) = 0;
 
     // Expresiones
-    virtual int visit(BinaryExp* binary) = 0;
-    virtual int visit(UnaryExp* unary) = 0;
-    virtual int visit(NumberExp* number) = 0;
-    virtual int visit(BoolExp* explist) = 0;
-    virtual int visit(IdentifierExp* id) = 0;
-    virtual int visit(FunctionCallExp* funcCall) = 0;
-    virtual int visit(ExpList* explist) = 0;
+    virtual Value visit(BinaryExp* binary) = 0;
+    virtual Value visit(UnaryExp* unary) = 0;
+    virtual Value visit(NumberExp* number) = 0;
+    virtual Value visit(BoolExp* explist) = 0;
+    virtual Value visit(IdentifierExp* id) = 0;
+    virtual Value visit(FunctionCallExp* funcCall) = 0;
+    virtual Value visit(ExpList* explist) = 0;
 };
 
 class PrintVisitor : public Visitor {
@@ -80,60 +83,65 @@ public:
     void visit(IfStmt* ifStmt) override;
     void visit(WhileStmt* whileStmt) override;
     void visit(ForStmt* forStmt) override;
-    int visit(BinaryExp* binary) override;
-    int visit(UnaryExp* unary) override;
-    int visit(NumberExp* number) override;
-    int visit(BoolExp* boolExp) override;
-    int visit(IdentifierExp* id) override;
-    int visit(ExpList* expList) override;
-
-    int visit(FunctionCallExp* funcCall) override;
+    Value visit(BinaryExp* binary) override;
+    Value visit(UnaryExp* unary) override;
+    Value visit(NumberExp* number) override;
+    Value visit(BoolExp* boolExp) override;
+    Value visit(IdentifierExp* id) override;
+    Value visit(ExpList* expList) override;
+    Value visit(FunctionCallExp* funcCall) override;
     void visit(ProcedureCall* procCall) override;
 
 };
 
-class TypeVisitor : public Visitor {
+class TypeEvalVisitor : public Visitor {
 private:
-    bool isNumericType(int type);
-    int getResultType(int leftType, int rightType);
-    string typeToString(int type);
-    enum TypeCode {
-        TYPE_UNKNOWN = 0,
-        TYPE_INTEGER = 1,
-        TYPE_LONGINT = 2,
-        TYPE_UNSIGNEDINT = 3,
-        TYPE_BOOLEAN = 4,
-        TYPE_VOID = 5
-    };
     Environment env;
-    // [nombreFuncion| <listTiposParametros> , returnFuncion]
-    map<string, pair<vector<string>, string>> functionTable;
-    // Retorno de la funcion ACTUAL
-    string retornoFuncActual;
+    map<string, pair<vector<string>, string>> functionTable;  // nombre → (tipos_params, tipo_retorno)
+    map<string, FunDec*> functionBodies;
+    stack<bool> functionReturnedStack;
+    stack<string> functionNameStack;
+    vector<Value> args;
+
+    optional<int64_t> extractInt64(const Value& v);
+
+    void checkAssignmentType(const string& var, const string& expectedType, const Value& val);
+
+    // Conversión para imprimir con cout
+    void printValue(const Value& val);
+
 public:
-    TypeVisitor() {
+    TypeEvalVisitor() {
         env.add_level();
     }
-    void visit (Program* program) override;
+
+    // Programa y bloques
+    void visit(Program* program) override;
     void visit(BlockStmt* block) override;
     void visit(StatementList* statementList) override;
-    void visit(VarDec* vd) override;
+
+    // Declaraciones
+    void visit(VarDec* varDec) override;
     void visit(VarDecList* varDecList) override;
     void visit(FunDec* funcDec) override;
     void visit(FunList* funcDecList) override;
+
+    // Sentencias
     void visit(AssignStmt* assign) override;
     void visit(PrintStmt* print) override;
     void visit(IfStmt* ifStmt) override;
     void visit(WhileStmt* whileStmt) override;
     void visit(ForStmt* forStmt) override;
-    int visit(BinaryExp* binary) override;
-    int visit(UnaryExp* unary) override;
-    int visit(NumberExp* number) override;
-    int visit(BoolExp* boolExp) override;
-    int visit(IdentifierExp* id) override;
-    int visit(ExpList* expList) override;
-    int visit(FunctionCallExp* funcCall) override;
     void visit(ProcedureCall* procCall) override;
+
+    // Expresiones
+    Value visit(BinaryExp* binary) override;
+    Value visit(UnaryExp* unary) override;
+    Value visit(NumberExp* number) override;
+    Value visit(BoolExp* boolExp) override;
+    Value visit(IdentifierExp* id) override;
+    Value visit(FunctionCallExp* funcCall) override;
+    Value visit(ExpList* expList) override;
 };
 
 #endif //PASCAL_COMPILADOR_VISITOR_H
