@@ -211,7 +211,7 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
             if (val <= INT32_MAX) {
                 env.update(varName, int32_t(val));
             } else {
-                cout << "Error: Desbordamiento al asignar unsigned a 'integer' en variable '" << varName << "'" << endl;
+                cout << "Error: Desbordamiento al asignar en la variable 'integer': '" << varName << "'" << endl;
                 exit(1);
             }
         } else if (holds_alternative<int64_t>(value)) {
@@ -219,11 +219,11 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
             if (val >= INT32_MIN && val <= INT32_MAX) {
                 env.update(varName, int32_t(val));
             } else {
-                cout << "Error: Desbordamiento al asignar longint a 'integer' en variable '" << varName << "'" << endl;
+                cout << "Error: Desbordamiento al asignar en la variable 'integer': '" << varName << "'" << endl;
                 exit(1);
             }
         } else {
-            cout << "Error: No se puede asignar tipo no numérico a 'integer' en variable '" << varName << "'" << endl;
+            cout << "Error: No se puede asignar un tipo boolean en la variable 'integer': '" << varName << "'" << endl;
             exit(1);
         }
     } else if (type == "longint") {
@@ -234,7 +234,7 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
         } else if (holds_alternative<uint32_t>(value)) {
             env.update(varName, int64_t(get<uint32_t>(value)));
         } else {
-            cout << "Error: No se puede asignar tipo no numérico a 'longint' en variable '" << varName << "'" << endl;
+            cout << "Error: No se puede asignar un tipo boolean en la variable 'longint': '" << varName << "'" << endl;
             exit(1);
         }
     } else if (type == "unsigned") {
@@ -245,19 +245,23 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
             if (val >= 0) {
                 env.update(varName, uint32_t(val));
             } else {
-                cout << "Error: No se puede asignar valor negativo a 'unsigned' en variable '" << varName << "'" << endl;
+                cout << "Error: No se puede asignar valor negativo en la variable 'unsigned': '" << varName << "'" << endl;
                 exit(1);
             }
         } else if (holds_alternative<int64_t>(value)) {
             int64_t val = get<int64_t>(value);
             if (val >= 0 && val <= UINT32_MAX) {
                 env.update(varName, uint32_t(val));
-            } else {
-                cout << "Error: Desbordamiento al asignar longint o asignar valor negativo a 'unsigned' en variable '" << varName << "'" << endl;
+            } else if (val<0) {
+                cout << "Error: No se puede asignar un valor negativo en la variable 'unsigned': '" << varName << "'" << endl;
+                exit(1);
+            }
+            else {
+                cout << "Error: Desbordamiento al asignar en la variable 'unsigned': '" << varName << "'" << endl;
                 exit(1);
             }
         } else {
-            cout << "Error: No se puede asignar tipo no numérico a 'unsigned' en variable '" << varName << "'" << endl;
+            cout << "Error: No se puede asignar un tipo boolean en la variable 'unsigned': '" << varName << "'" << endl;
             exit(1);
         }
     } else if (type == "boolean") {
@@ -294,8 +298,8 @@ void TypeEvalVisitor::visit(StatementList* statementList) {
 
 void TypeEvalVisitor::visit(VarDec* vd) {
     for (const auto& var : vd->vars) {
-        if (env.check(var)) {
-            cout << "Error: Variable '" << var << "' ya declarada"<<endl;
+        if (env.exists_in_current_level(var)) {
+            cout << "Error: Variable '" << var << "' ya declarada en el mismo ámbito" << endl;
             exit(1);
         }
         env.add_var(var, vd->type);
@@ -345,6 +349,7 @@ void TypeEvalVisitor::visit(PrintStmt* print) {
             cout<<" ";
         }
     }
+    args.clear();
     cout << endl;
 }
 
@@ -423,11 +428,17 @@ void TypeEvalVisitor::visit(ProcedureCall* procCall) {
         cout << "Error: procedimiento '" << procCall->funcName << "' no declarado" << endl;
         exit(1);
     }
+
+    FunDec* func = functions[procCall->funcName];
+
+    if (func->returnType != "void") {
+        cout << "Error: La funcion '" << func->nombre << "' debe usarse solo en expresiones" << endl;
+        exit(1);
+    }
+
     if (procCall->args) {
         procCall->args->accept(this);
     }
-
-    FunDec* func = functions[procCall->funcName];
 
     if (args.size() != func->tipos.size()) {
         cout << "Error: número incorrecto de argumentos para '" << procCall->funcName << "'" << endl;
@@ -616,12 +627,17 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
         exit(1);
     }
 
+    FunDec* func = functions[name];
+
+    if (func->returnType == "void") {
+        cout << "Error: El procedimiento '" << name << "' no retorna valor y no puede usarse en una expresión" << endl;
+        exit(1);
+    }
+
     // Evaluar argumentos
     if (funcCall->args) {
         funcCall->args->accept(this);
     }
-
-    FunDec* func = functions[name];
 
     if (args.size() != func->tipos.size()) {
         cout << "Error: número incorrecto de argumentos para '" << name << "'" << endl;
@@ -630,8 +646,6 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
 
     // Preparar entorno de ejecución
     env.add_level();
-    functionNameStack.push(name);
-    functionReturnedStack.push(false);
 
     // Declarar parámetros
     for (size_t i = 0; i < func->tipos.size(); ++i) {
@@ -644,7 +658,8 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
 
     // Declarar la variable de retorno (con el nombre de la función)
     env.add_var(name, func->returnType);
-
+    functionNameStack.push(name);
+    functionReturnedStack.push(false);
     // Ejecutar cuerpo
     func->cuerpo->accept(this);
 
@@ -678,8 +693,16 @@ Value TypeEvalVisitor::visit(ExpList* expList) {
     }
     return 0;
 }
+
 void TypeEvalVisitor::printValue(const Value& val) {
-    std::visit([](const auto& v) {
-        cout << v;
+    std::visit([](auto&& arg) {
+    using T = std::decay_t<decltype(arg)>;
+    if constexpr (std::is_same_v<T, std::monostate>) {
+        cout << "<sin valor>";
+    } else if constexpr (std::is_same_v<T, bool>) {
+        cout << (arg ? "true" : "false");
+    } else {
+        cout << arg;
+    }
     }, val);
 }

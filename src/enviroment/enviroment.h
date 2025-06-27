@@ -11,7 +11,7 @@
 
 using namespace std;
 
-using Value = variant<int32_t, uint32_t, int64_t, bool>;
+using Value = variant<monostate,int32_t, uint32_t, int64_t, bool>;
 
 class Environment {
 private:
@@ -47,30 +47,23 @@ public:
 
     void add_var(const string& var, const string& type) {
         if (levels.empty()) {
-            cerr << "Error: No hay niveles activos\n";
+            cout << "Error: No hay niveles activos\n";
             exit(1);
         }
 
-        if (type == "integer")
-            levels.back()[var] = int32_t(0);
-        else if (type == "unsigned")
-            levels.back()[var] = uint32_t(0);
-        else if (type == "longint")
-            levels.back()[var] = int64_t(0);
-        else if (type == "boolean")
-            levels.back()[var] = false;
-        else {
-            cerr << "Tipo desconocido: " << type << "\n";
+        if (type != "integer" && type != "unsigned" && type != "longint" && type != "boolean") {
+            cout << "Error: Tipo desconocido para declarar una variable: '" << type << "'\n";
             exit(1);
         }
 
+        levels.back()[var] = std::monostate{}; // variable sin valor inicial
         type_levels.back()[var] = type;
     }
 
     void update(const string& var, const Value& val) {
         int idx = search_rib(var);
         if (idx == -1) {
-            cerr << "Variable no declarada: " << var << "\n";
+            cout << "Variable no declarada: " << var << "\n";
             exit(1);
         }
         levels[idx][var] = val;
@@ -81,19 +74,33 @@ public:
         return (idx >= 0);
     }
 
+    bool exists_in_current_level(const string& var) const {
+        if (levels.empty()) return false;
+        return levels.back().count(var) > 0;
+    }
+
+
     Value lookup(const string& var) {
         int idx = search_rib(var);
         if (idx == -1) {
-            cerr << "Variable no declarada: " << var << "\n";
+            cout << "Error: Variable no declarada: '" << var << "'\n";
             exit(1);
         }
-        return levels[idx][var];
+
+        const Value& val = levels[idx][var];
+
+        if (holds_alternative<std::monostate>(val)) {
+            cout << "Error: La variable '" << var << "' no tiene un valor asignado.\n";
+            exit(1);
+        }
+
+        return val;
     }
 
     string lookup_type(const string& var) {
         int idx = search_rib(var);
         if (idx == -1) {
-            cerr << "Variable no declarada: " << var << "\n";
+            cout << "Variable no declarada: " << var << "\n";
             exit(1);
         }
         return type_levels[idx][var];
