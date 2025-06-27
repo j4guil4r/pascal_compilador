@@ -64,7 +64,7 @@ public:
 class FunctionCallExp : public Exp {
 public:
     std::string funcName;
-    ExpList* args;
+    ExpList* args=nullptr;
     FunctionCallExp(const std::string& name);
     FunctionCallExp(const std::string& name, ExpList* args);
     Value accept(Visitor* visitor) override;

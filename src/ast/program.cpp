@@ -74,4 +74,5 @@ void BlockStmt::accept(Visitor* visitor) {
 BlockStmt::~BlockStmt() {
     delete vardeclist;
     delete slist;
+    delete fundeclist;
 }

@@ -64,7 +64,7 @@ public:
 class ProcedureCall : public Stmt {
 public:
     string funcName;
-    ExpList* args;
+    ExpList* args=nullptr;
     ProcedureCall(std::string funcName);
     ProcedureCall(const std::string& name, ExpList* args);
     void accept(Visitor* visitor) override;
