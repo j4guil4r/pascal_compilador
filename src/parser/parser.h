@@ -3,6 +3,7 @@
 
 #include "../scanner/scanner.h"
 #include "../ast/program.h"
+
 using namespace std;
 
 class Parser {
