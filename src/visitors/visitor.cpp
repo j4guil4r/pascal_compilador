@@ -237,7 +237,7 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
             cout << "Error: No se puede asignar un tipo boolean en la variable 'longint': '" << varName << "'" << endl;
             exit(1);
         }
-    } else if (type == "unsigned") {
+    } else if (type == "unsignedint") {
         if (holds_alternative<uint32_t>(value)) {
             env.update(varName, value);
         } else if (holds_alternative<int32_t>(value)) {

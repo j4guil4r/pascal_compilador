@@ -51,7 +51,7 @@ public:
             exit(1);
         }
 
-        if (type != "integer" && type != "unsigned" && type != "longint" && type != "boolean") {
+        if (type != "integer" && type != "unsignedint" && type != "longint" && type != "boolean") {
             cout << "Error: Tipo desconocido para declarar una variable: '" << type << "'\n";
             exit(1);
         }
