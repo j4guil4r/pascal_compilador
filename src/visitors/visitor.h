@@ -110,9 +110,7 @@ private:
     void printValue(const Value& val);
 
 public:
-    TypeEvalVisitor() {
-        env.add_level();
-    }
+    TypeEvalVisitor() {}
 
     // Programa y bloques
     void visit(Program* program) override;
@@ -142,5 +140,55 @@ public:
     Value visit(FunctionCallExp* funcCall) override;
     Value visit(ExpList* expList) override;
 };
+
+// Declaración de la clase GenCodeVisitor adaptada con static link y entorno lexical
+class GenCodeVisitor : public Visitor {
+private:
+    ostream& out;
+    unordered_map<string, int> functionLevels;
+    Environment env;
+    int offsetActual = -8;
+    int labelCounter = 0;
+    string currentFunction;
+    bool requiereStaticLink = false;
+    vector<pair<string, int>> argRegMap;
+
+    void asignarOffset(const std::string& var);
+    int obtenerOffset(const std::string& var, int& nivelesArriba);
+    void generarStaticLink(int nivelesArriba);
+
+public:
+    GenCodeVisitor(std::ostream& o);
+    void generar(Program* p);
+
+    // Visitantes de expresiones
+    Value visit(NumberExp* exp) override;
+    Value visit(BoolExp* exp) override;
+    Value visit(IdentifierExp* exp) override;
+    Value visit(BinaryExp* exp) override;
+    Value visit(UnaryExp* exp) override;
+    Value visit(FunctionCallExp* exp) override;
+    Value visit(ExpList* expList) override;
+
+    // Visitantes de instrucciones
+    void visit(AssignStmt* stmt) override;
+    void visit(PrintStmt* stmt) override;
+    void visit(IfStmt* stmt) override;
+    void visit(WhileStmt* stmt) override;
+    void visit(ForStmt* stmt) override;
+    void visit(ProcedureCall* stmt) override;
+
+    // Declaraciones
+    void visit(VarDec* decl) override;
+    void visit(VarDecList* decls) override;
+    void visit(FunDec* f) override;
+    void visit(FunList* list) override;
+
+    // Estructura
+    void visit(StatementList* list) override;
+    void visit(BlockStmt* b) override;
+    void visit(Program* p) override;
+};
+
 
 #endif //PASCAL_COMPILADOR_VISITOR_H

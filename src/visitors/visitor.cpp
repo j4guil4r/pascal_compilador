@@ -6,7 +6,7 @@
 #include <iostream>
 using namespace std;
 
-
+//PRINTVISITOR
 void PrintVisitor::visit(Program* program) {
     cout << "program " << program->ProgramName << ';' << endl;
     program->body->accept(this);
@@ -202,6 +202,7 @@ optional<int64_t> TypeEvalVisitor::extractInt64(const Value& v) {
     return nullopt;
 }
 
+//TYPEEVALVISITOR
 void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& type, const Value& value) {
     if (type == "integer") {
         if (holds_alternative<int32_t>(value)) {
@@ -706,3 +707,353 @@ void TypeEvalVisitor::printValue(const Value& val) {
     }
     }, val);
 }
+
+// Constructor
+GenCodeVisitor::GenCodeVisitor(std::ostream& o) : out(o) {}
+
+void GenCodeVisitor::asignarOffset(const std::string& var) {
+    env.add_var_ofset(var, offsetActual);
+    offsetActual -= 8;
+}
+
+int GenCodeVisitor::obtenerOffset(const std::string& var, int& nivelesArriba) {
+    for (int nivel = env.current_level(); nivel >= 1; nivel--) {
+        if (env.exists_in_level(nivel - 1, var)) {
+            if (nivel == 1) {
+                nivelesArriba = -1;
+                return 0;
+            } else if (nivel == env.current_level()) {
+                nivelesArriba = 0;
+                return env.get_offset(nivel - 1, var);
+            } else {
+                nivelesArriba = env.current_level() - nivel;
+                return env.get_offset(nivel - 1, var);
+            }
+        }
+    }
+    cerr << "Error: Variable no declarada '" << var << "'\n";
+    exit(1);
+}
+
+void GenCodeVisitor::generarStaticLink(int nivelesArriba) {
+    cout << "  movq %rdi, %rax\n";
+    for (int i = 0; i < nivelesArriba; i++) {
+        cout << "  movq -8(%rax), %rax\n";
+    }
+}
+
+void GenCodeVisitor::generar(Program* p) {
+    cout << ".data\n";
+    out << "print_fmt: .string \"%ld\\n\"\n";
+    currentFunction = "main";
+    p->accept(this);
+    out << ".section .note.GNU-stack,\"\",@progbits\n";
+}
+
+void GenCodeVisitor::visit(Program* p) {
+    env.add_level();
+    out << "  .globl "<<currentFunction<<"\n";
+    p->body->accept(this);
+    env.remove_level();
+}
+
+void GenCodeVisitor::visit(BlockStmt* b) {
+    out << currentFunction << ":\n";
+    out << "  pushq %rbp\n";
+    out << "  movq %rsp, %rbp\n";
+
+    // Guardar static link si es necesario
+    if (requiereStaticLink) {
+        out << "  mov %rdi, -8(%rbp)\n";
+    }
+
+    // Guardar argumentos (ya definidos en argRegMap)
+    for (const auto& [reg, offset] : argRegMap) {
+        out << "  mov " << reg << ", " << offset << "(%rbp)\n";
+    }
+
+    int inicioOffset = offsetActual;
+    if (b->vardeclist) b->vardeclist->accept(this);
+    int totalLocales = -(inicioOffset - offsetActual);
+    if (totalLocales > 0) {
+        out << "  subq $" << totalLocales << ", %rsp\n";
+    }
+
+    if (b->slist) b->slist->accept(this);
+
+    out << ".end_" << currentFunction << ":\n";
+    out << "  leave\n";
+    out << "  ret\n";
+
+    if (b->fundeclist) b->fundeclist->accept(this);
+}
+
+void GenCodeVisitor::visit(FunDec* f) {
+    env.add_level();
+    int nivel = env.current_level();
+    requiereStaticLink = (nivel > 2);
+    offsetActual = requiereStaticLink ? -16 : -8;
+    currentFunction = f->nombre;
+    functionLevels[f->nombre] = env.current_level();
+    out << ".globl " << currentFunction << "\n";
+
+    // Argumentos
+    vector<string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+    argRegMap.clear();
+
+    for (size_t i = 0; i < f->parametros.size(); ++i) {
+        const string& var = f->parametros[i];
+        env.add_var(var, f->tipos[i]);
+        asignarOffset(var);
+
+        if (i < argRegs.size()) {
+            argRegMap.push_back({argRegs[i], env.get_offset(env.current_level() - 1, var)});
+        } else {
+            cerr << "Error: demasiados parámetros en función '" << f->nombre << "'\n";
+            exit(1);
+        }
+    }
+
+    f->cuerpo->accept(this);
+    env.remove_level();
+}
+
+void GenCodeVisitor::visit(AssignStmt* stmt) {
+    stmt->expr->accept(this);
+
+    int nivelesArriba;
+    int offset = obtenerOffset(stmt->varName, nivelesArriba);
+
+    if (nivelesArriba == -1) {
+        out << "  movq %rax, " << stmt->varName << "(%rip)\n";
+    } else if (nivelesArriba == 0) {
+        out << "  movq %rax, " << offset << "(%rbp)\n";
+    } else {
+        generarStaticLink(nivelesArriba);
+        out << "  movq %rax, " << offset << "(%rax)\n";
+    }
+}
+
+Value GenCodeVisitor::visit(IdentifierExp* e) {
+    int nivelesArriba;
+    int offset = obtenerOffset(e->name, nivelesArriba);
+
+    if (nivelesArriba == -1) {
+        out << "  movq " << e->name << "(%rip), %rax\n";
+    } else if (nivelesArriba == 0) {
+        out << "  movq " << offset << "(%rbp), %rax\n";
+    } else {
+        generarStaticLink(nivelesArriba);
+        out << "  movq " << offset << "(%rax), %rax\n";
+    }
+    return 0;
+}
+
+Value GenCodeVisitor::visit(NumberExp* e) {
+    out << "  movq $" << e->num << ", %rax\n";
+    return 0;
+}
+
+Value GenCodeVisitor::visit(BoolExp* e) {
+    out << "  movq $" << (e->value ? 1 : 0) << ", %rax\n";
+    return 0;
+}
+
+Value GenCodeVisitor::visit(BinaryExp* e) {
+    e->left->accept(this);
+    out << "  pushq %rax\n";
+    e->right->accept(this);
+    out << "  popq %rbx\n";
+
+    switch (e->op) {
+        case PLUS_OP: out << "  addq %rbx, %rax\n"; break;
+        case MINUS_OP: out << "  subq %rbx, %rax\n"; break;
+        case MUL_OP: out << "  imulq %rbx, %rax\n"; break;
+        case DIV_OP:
+            out << "  cqto\n";
+            out << "  idivq %rbx\n";
+            break;
+        case AND_OP: out << "  andq %rbx, %rax\n"; break;
+        case OR_OP: out << "  orq %rbx, %rax\n"; break;
+        case EQ_OP:
+            out << "  cmpq %rbx, %rax\n";
+            out << "  sete %al\n";
+            out << "  movzbq %al, %rax\n";
+            break;
+        case LT_OP:
+            out << "  cmpq %rbx, %rax\n";
+            out << "  setl %al\n";
+            out << "  movzbq %al, %rax\n";
+            break;
+        default:
+            cerr << "Operador no implementado: " << Exp::binopToStr(e->op) << "\n";
+            exit(1);
+    }
+    return 0;
+}
+
+Value GenCodeVisitor::visit(FunctionCallExp* e) {
+    vector<string> argRegs = {"%rdi","%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+    int regIndex = 0;
+    if (functionLevels[e->funcName] >= 3) {
+        // Pasar el static link: el %rbp actual como primer argumento en %rdi
+        out << "  movq %rbp, "<< argRegs[regIndex++] << "\n";
+        regIndex++;
+    }
+    // Evaluar argumentos y colocarlos en los registros correspondientes o en la pila
+    for (Exp* arg : e->args->exps) {
+        arg->accept(this);
+        if (regIndex < argRegs.size()) {
+            out << "  movq %rax, " << argRegs[regIndex++] << "\n";
+        } else {
+            out << "  pushq %rax\n";
+        }
+    }
+    // Determinar si la función llamada está en un nivel mayor a 2 (necesita static link)
+    out << "  call " << e->funcName << "\n";
+    return 0;
+}
+
+void GenCodeVisitor::visit(WhileStmt* stm) {
+    int label = labelCounter++;
+    string startLabel = "while_" + to_string(label);
+    string endLabel = "endwhile_" + to_string(label);
+
+    out << startLabel << ":\n";
+    stm->condition->accept(this);
+    out << "  cmpq $0, %rax\n";
+    out << "  je " << endLabel << "\n";
+    stm->body->accept(this);
+    out << "  jmp " << startLabel << "\n";
+    out << endLabel << ":\n";
+}
+
+void GenCodeVisitor::visit(ProcedureCall* e) {
+    vector<string> argRegs = {"%rdi","%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+    int regIndex = 0;
+    if (functionLevels[e->funcName] >= 3) {
+        // Pasar el static link: el %rbp actual como primer argumento en %rdi
+        out << "  movq %rbp, "<< argRegs[regIndex++] << "\n";
+    }
+    // Evaluar argumentos y colocarlos en los registros correspondientes o en la pila
+    for (Exp* arg : e->args->exps) {
+        arg->accept(this);
+        if (regIndex < argRegs.size()) {
+            out << "  movq %rax, " << argRegs[regIndex++] << "\n";
+        } else {
+            out << "  pushq %rax\n";
+        }
+    }
+    // Determinar si la función llamada está en un nivel mayor a 2 (necesita static link)
+    out << "  call " << e->funcName << "\n";
+}
+
+void GenCodeVisitor::visit(PrintStmt* stmt) {
+    if (stmt->expressions) {
+        for (Exp* exp : stmt->expressions->exps) {
+            exp->accept(this);
+            out << "  movq %rax, %rsi\n";
+            out << "  leaq print_fmt(%rip), %rdi\n";
+            out << "  xor %eax, %eax\n";
+            out << "  call printf@PLT\n";
+        }
+    }
+}
+
+void GenCodeVisitor::visit(IfStmt* stmt) {
+    int label = labelCounter++;
+    string elseLabel = "else_" + to_string(label);
+    string endLabel = "endif_" + to_string(label);
+
+    stmt->condition->accept(this);
+    out << "  cmpq $0, %rax\n";
+    out << "  je " << (stmt->elseBlock ? elseLabel : endLabel) << "\n";
+
+    stmt->thenBlock->accept(this);
+    out << "  jmp " << endLabel << "\n";
+
+    if (stmt->elseBlock) {
+        out << elseLabel << ":\n";
+        stmt->elseBlock->accept(this);
+    }
+
+    out << endLabel << ":\n";
+}
+
+void GenCodeVisitor::visit(ForStmt* stmt) {
+    int label = labelCounter++;
+    string loopLabel = "for_loop_" + to_string(label);
+    string endLabel = "for_end_" + to_string(label);
+
+    // Inicialización
+    stmt->startValue->accept(this);
+    out << "  movq %rax, %r12\n";
+    stmt->endValue->accept(this);
+    out << "  movq %rax, %r13\n";
+
+    out << loopLabel << ":\n";
+    out << "  cmpq %r13, %r12\n";
+    out << (stmt->isDownto ? "  jl " : "  jg ") << endLabel << "\n";
+
+    // Asignar variable de control
+    int nivelesArriba;
+    int offset = obtenerOffset(stmt->varName, nivelesArriba);
+    if (nivelesArriba == 0) {
+        out << "  movq %r12, " << offset << "(%rbp)\n";
+    } else {
+        generarStaticLink(nivelesArriba);
+        out << "  movq %r12, " << offset << "(%rax)\n";
+    }
+
+    // Cuerpo
+    stmt->body->accept(this);
+
+    // Incremento/decremento
+    out << "  " << (stmt->isDownto ? "decq" : "incq") << " %r12\n";
+    out << "  jmp " << loopLabel << "\n";
+    out << endLabel << ":\n";
+}
+
+// Implementaciones restantes (similares al patrón mostrado)
+void GenCodeVisitor::visit(VarDec* dec) {
+    for (const auto& var : dec->vars) {
+        env.add_var(var, dec->type);
+        if (env.current_level() == 1) {
+            out << var << ": .quad 0\n";
+        } else {
+            asignarOffset(var);
+        }
+    }
+}
+
+void GenCodeVisitor::visit(VarDecList* list) {
+    for (auto* decl : list->vardecs) decl->accept(this);
+}
+
+void GenCodeVisitor::visit(FunList* list) {
+    for (auto* f : list->Fundcs) f->accept(this);
+}
+
+void GenCodeVisitor::visit(StatementList* list) {
+    for (auto* stmt : list->stms) stmt->accept(this);
+}
+
+Value GenCodeVisitor::visit(UnaryExp* e) {
+    e->expr->accept(this);
+    if (e->op == "-") {
+        out << "  negq %rax\n";
+    } else if (e->op == "not") {
+        out << "  notq %rax\n";
+    } else {
+        cerr << "Operador unario no soportado: " << e->op << endl;
+        exit(1);
+    }
+    return 0;
+}
+
+Value GenCodeVisitor::visit(ExpList* list) {
+    // Normalmente no se necesita implementación
+    return 0;
+}
+
+
