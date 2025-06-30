@@ -772,12 +772,12 @@ void GenCodeVisitor::visit(BlockStmt* b) {
 
         int inicioOffset = offsetActual;
         if (b->vardeclist) b->vardeclist->accept(this);
-        int totalLocales = -(inicioOffset - offsetActual);
+        int totalLocales = (inicioOffset - offsetActual);
         if (totalLocales > 0) {
             cout << " subq $" << totalLocales << ", %rsp\n";
         }
     }
-    if (b->slist) b->slist->accept(this);
+    if (b->slist) {b->slist->accept(this);}
 
     // cargar valor de retorno en %rax si la función no es void
     if (currentFunctionHasReturn) {
@@ -882,32 +882,31 @@ Value GenCodeVisitor::visit(BoolExp* e) {
 }
 
 Value GenCodeVisitor::visit(BinaryExp* e) {
-    // Casos especiales: MOD y DIV deben usar idivq con cuidado
     if (e->op == DIV_OP || e->op == MOD_OP) {
-        // 1. Preservar rbx si es necesario (registro callee-saved)
-        cout << " pushq %rbx\n";
+        // 1. Evaluar divisor (right), guardarlo en pila
+        e->right->accept(this);     // → %rax = divisor
+        cout << " pushq %rax\n";    // apilar divisor
 
-        // 2. Evaluar divisor (right) y mover a rbx
-        e->right->accept(this);
-        cout << " movq %rax, %rbx\n";
+        // 2. Evaluar dividendo (left)
+        e->left->accept(this);      // → %rax = dividendo
 
-        // 3. Evaluar dividendo (left) - resultado en rax
-        e->left->accept(this);
+        // 3. Preparar para divisiones: sign-extend %rax → %rdx:%rax
+        cout << " cqto\n";
 
-        // 4. Preparar división
-        cout << " cqto\n";        // Extiende rax -> rdx:rax
-        cout << " idivq %rbx\n";  // rax = cociente, rdx = residuo
+        // 4. Recuperar divisor en %rcx
+        cout << " popq %rax\n";
+        cout << " movq %rax, %rcx\n";
 
-        // 5. Para MOD, mover residuo a rax
+        // 5. Dividir: %rax = cociente, %rdx = residuo
+        cout << " idivq %rcx\n";
+
+        // 6. Si es MOD, mover residuo a %rax
         if (e->op == MOD_OP) {
             cout << " movq %rdx, %rax\n";
         }
 
-        // 6. Restaurar rbx
-        cout << " popq %rbx\n";
         return 0;
     }
-
     // Caso general para los demás operadores
     e->left->accept(this);
     cout << " pushq %rax\n"; // guarda left
@@ -1002,17 +1001,21 @@ Value GenCodeVisitor::visit(FunctionCallExp* e) {
 void GenCodeVisitor::visit(ProcedureCall* e) {
     vector<string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
     int regIndex = 0;
-    if (functionLevels[e->funcName] >= 3) {
+    if (functionLevels[e->funcName] >= 2) {
         cout << " movq %rbp, " << argRegs[regIndex++] << "\n";
     }
-    for (Exp* arg : e->args->exps) {
-        arg->accept(this);
-        if (regIndex < argRegs.size()) {
-            cout << " movq %rax, " << argRegs[regIndex++] << "\n";
-        } else {
-            cout << " pushq %rax\n";
+
+    if (e->args) {
+        for (auto arg : e->args->exps) {
+            arg->accept(this);
+            if (regIndex < argRegs.size()) {
+                cout << " movq %rax, " << argRegs[regIndex++] << "\n";
+            } else {
+                cout << " pushq %rax\n";
+            }
         }
     }
+
     cout << " call " << e->funcName << "\n";
 }
 
