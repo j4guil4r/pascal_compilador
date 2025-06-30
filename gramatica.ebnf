@@ -5,7 +5,7 @@ declaration_section : [var_section] (function_section | procedure_section)*
 var_section      : 'var' (var_declaration ';')+
 var_declaration  : identifier_list ':' type
 identifier_list  : ID (',' ID)*
-type             : 'integer' | 'longint' | 'unsignedint' | 'void'
+type             : 'integer' | 'longint' | 'unsignedint' | 'void' | 'boolean'
 function_section: 'function' ID [formal_parameters] ':' type ';' block ';'
 procedure_section : 'procedure' ID [formal_parameters] ';' block ';'
 formal_parameters : '(' var_declaration (';' var_declaration)* ')'
