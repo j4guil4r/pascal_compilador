@@ -144,10 +144,10 @@ public:
 // Declaración de la clase GenCodeVisitor adaptada con static link y entorno lexical
 class GenCodeVisitor : public Visitor {
 private:
-    ostream& out;
     unordered_map<string, int> functionLevels;
     Environment env;
     int offsetActual = -8;
+    bool currentFunctionHasReturn = false;
     int labelCounter = 0;
     string currentFunction;
     bool requiereStaticLink = false;
@@ -158,7 +158,7 @@ private:
     void generarStaticLink(int nivelesArriba);
 
 public:
-    GenCodeVisitor(std::ostream& o);
+    GenCodeVisitor(){};
     void generar(Program* p);
 
     // Visitantes de expresiones
