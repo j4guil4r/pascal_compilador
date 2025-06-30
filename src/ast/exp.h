@@ -73,7 +73,7 @@ public:
 
 class ExpList {
     public:
-    std::list<Exp*> exps;
+    std::list<Exp*> exps={};
     ExpList();
     void add(Exp* stm);
     void accept(Visitor* visitor);
