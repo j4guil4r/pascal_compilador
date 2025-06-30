@@ -73,8 +73,8 @@ public:
     }
 
     bool exists_in_level(int level, const string& var) const {
-        if (level < 0 || level >= (int)levels.size()) return false;
-        return levels[level].count(var) > 0;
+        if (level <= 0 || level > (int)levels.size()) return false;
+        return levels[level-1].count(var) > 0;
     }
 
     int get_offset(int level, const string& var) const {
@@ -89,6 +89,35 @@ public:
         return offset_levels[level].at(var);
     }
 
+    void mostrar_entorno() const {
+        cout << "# ===== ENTORNO DE EJECUCIÓN ACTUAL =====\n";
+        cout << "# Niveles activos: " << current_level() << "\n";
+
+        for (int i = 0; i < current_level(); ++i) {
+            cout << "# --- Nivel " << (i + 1) << " ---\n";
+
+            const auto& vars = levels[i];
+            const auto& tipos = type_levels[i];
+            const auto& offsets = offset_levels[i];
+
+            for (const auto& [nombre, _] : vars) {
+                cout << "# Variable: " << nombre;
+
+                if (tipos.count(nombre))
+                    cout << ", Tipo: " << tipos.at(nombre);
+                else
+                    cout << ", Tipo: (desconocido)";
+
+                if (offsets.count(nombre))
+                    cout << ", Offset: " << offsets.at(nombre);
+                else
+                    cout << ", (global)";
+
+                cout << "\n";
+            }
+        }
+        cout << "# =========================================\n";
+    }
 
     void update(const string& var, const Value& val) {
         int idx = search_rib(var);
