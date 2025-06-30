@@ -710,8 +710,8 @@ void TypeEvalVisitor::printValue(const Value& val) {
 // GENCODE
 
 void GenCodeVisitor::asignarOffset(const std::string& var) {
-    env.add_var_ofset(var, offsetActual);
     offsetActual -= 8;
+    env.add_var_ofset(var, offsetActual);
 }
 
 int GenCodeVisitor::obtenerOffset(const std::string& var, int& nivelesArriba) {
@@ -770,11 +770,10 @@ void GenCodeVisitor::visit(BlockStmt* b) {
             cout << " mov " << reg << ", " << offset << "(%rbp)\n";
         }
 
-        int inicioOffset = offsetActual;
+
         if (b->vardeclist) b->vardeclist->accept(this);
-        int totalLocales = (inicioOffset - offsetActual);
-        if (totalLocales > 0) {
-            cout << " subq $" << totalLocales << ", %rsp\n";
+        if (-offsetActual > 0) {
+            cout << " subq $" << -offsetActual << ", %rsp\n";
         }
     }
     if (b->slist) {b->slist->accept(this);}
@@ -810,7 +809,7 @@ void GenCodeVisitor::visit(FunDec* f) {
     env.add_level();
     int nivel = env.current_level();
     requiereStaticLink = (nivel > 2);
-    offsetActual = requiereStaticLink ? -16 : -8;
+    offsetActual = requiereStaticLink ? -8 : 0;
     currentFunction = f->nombre;
     functionLevels[f->nombre] = env.current_level();
     currentFunctionHasReturn = (f->returnType != "void");;
@@ -986,14 +985,17 @@ Value GenCodeVisitor::visit(FunctionCallExp* e) {
     if (functionLevels[e->funcName] >= 3) {
         cout << " movq %rbp, " << argRegs[regIndex++] << "\n";
     }
-    for (Exp* arg : e->args->exps) {
-        arg->accept(this);
-        if (regIndex < argRegs.size()) {
-            cout << " movq %rax, " << argRegs[regIndex++] << "\n";
-        } else {
-            cout << " pushq %rax\n";
+    if (e->args) {
+        for (Exp* arg : e->args->exps) {
+            arg->accept(this);
+            if (regIndex < argRegs.size()) {
+                cout << " movq %rax, " << argRegs[regIndex++] << "\n";
+            } else {
+                cout << " pushq %rax\n";
+            }
         }
     }
+
     cout << " call " << e->funcName << "\n";
     return 0;
 }
