@@ -733,13 +733,6 @@ int GenCodeVisitor::obtenerOffset(const std::string& var, int& nivelesArriba) {
     exit(1);
 }
 
-void GenCodeVisitor::generarStaticLink(int nivelesArriba) {
-    cout << " movq %rdi, %rax\n";
-    for (int i = 0; i < nivelesArriba; i++) {
-        cout << " movq -8(%rax), %rax\n";
-    }
-}
-
 void GenCodeVisitor::generar(Program* p) {
     cout << ".data\n";
     cout << "print_fmt: .string \"%ld\\n\"\n";
@@ -762,17 +755,18 @@ void GenCodeVisitor::visit(BlockStmt* b) {
     cout << " pushq %rbp\n";
     cout << " movq %rsp, %rbp\n";
     if (env.current_level()>1) {
-        if (requiereStaticLink) {
-            cout << " mov %rdi, -8(%rbp)\n";
-        }
-
         for (const auto& [reg, offset] : argRegMap) {
             cout << " mov " << reg << ", " << offset << "(%rbp)\n";
         }
 
+        int actual=offsetActual;
 
+        if (currentFunctionHasReturn) {
+            env.add_var(currentFunction, "boolean");
+            asignarOffset(currentFunction);
+        }
         if (b->vardeclist) b->vardeclist->accept(this);
-        if (-offsetActual > 0) {
+        if (-offsetActual > -actual) {
             cout << " subq $" << -offsetActual << ", %rsp\n";
         }
     }
@@ -807,11 +801,9 @@ void GenCodeVisitor::visit(VarDecList* list) {
 
 void GenCodeVisitor::visit(FunDec* f) {
     env.add_level();
-    int nivel = env.current_level();
-    requiereStaticLink = (nivel > 2);
-    offsetActual = requiereStaticLink ? -8 : 0;
+    offsetActual=0;
+
     currentFunction = f->nombre;
-    functionLevels[f->nombre] = env.current_level();
     currentFunctionHasReturn = (f->returnType != "void");;
     cout << ".globl " << currentFunction << "\n";
 
@@ -830,11 +822,6 @@ void GenCodeVisitor::visit(FunDec* f) {
             exit(1);
         }
     }
-    // Declarar la variable de retorno si no es void
-    if (currentFunctionHasReturn) {
-        env.add_var(f->nombre, f->returnType);
-        asignarOffset(f->nombre);
-    }
 
     f->cuerpo->accept(this);
     env.remove_level();
@@ -850,8 +837,8 @@ void GenCodeVisitor::visit(AssignStmt* stmt) {
     } else if (nivelesArriba == 0) {
         cout << " movq %rax, " << offset << "(%rbp)\n";
     } else {
-        generarStaticLink(nivelesArriba);
-        cout << " movq %rax, " << offset << "(%rax)\n";
+        cerr<<"No puedo acceder a variables locales de otras funciones aun"<<endl;
+        exit(1);
     }
 }
 
@@ -864,8 +851,8 @@ Value GenCodeVisitor::visit(IdentifierExp* e) {
     } else if (nivelesArriba == 0) {
         cout << " movq " << offset << "(%rbp), %rax\n";
     } else {
-        generarStaticLink(nivelesArriba);
-        cout << " movq " << offset << "(%rax), %rax\n";
+        cerr<<"Todavia no puedo llamar a variables locales de otras funcioens"<<endl;
+        exit(1);
     }
     return 0;
 }
@@ -982,9 +969,6 @@ Value GenCodeVisitor::visit(BinaryExp* e) {
 Value GenCodeVisitor::visit(FunctionCallExp* e) {
     vector<string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
     int regIndex = 0;
-    if (functionLevels[e->funcName] >= 3) {
-        cout << " movq %rbp, " << argRegs[regIndex++] << "\n";
-    }
     if (e->args) {
         for (Exp* arg : e->args->exps) {
             arg->accept(this);
@@ -1003,9 +987,6 @@ Value GenCodeVisitor::visit(FunctionCallExp* e) {
 void GenCodeVisitor::visit(ProcedureCall* e) {
     vector<string> argRegs = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
     int regIndex = 0;
-    if (functionLevels[e->funcName] >= 2) {
-        cout << " movq %rbp, " << argRegs[regIndex++] << "\n";
-    }
 
     if (e->args) {
         for (auto arg : e->args->exps) {
@@ -1080,8 +1061,8 @@ void GenCodeVisitor::visit(ForStmt* stmt) {
     } else if (nivelesArriba == 0) {
         cout << " movq %r12, " << offset << "(%rbp)\n";
     } else {
-        generarStaticLink(nivelesArriba);
-        cout << " movq %r12, " << offset << "(%rax)\n";
+        cerr<<"No puedo acceder a las variables locales de otras funciones aun"<<endl;
+        exit(1);
     }
 
     stmt->body->accept(this);
