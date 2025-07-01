@@ -1,7 +1,17 @@
 program Control6;
 var
-  k: integer;
+  i, j: integer;
 begin
-  for k := 5 downto 1 do begin
-    writeln(k); end;
+  i := 1;
+
+  while i <= 3 do
+  begin
+    j := 1;
+    while j <= 3 do
+    begin
+      writeln(j);
+      j := j + 1;
+    end;
+    i := i + 1;
+  end;
 end.
