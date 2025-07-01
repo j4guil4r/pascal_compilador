@@ -146,7 +146,7 @@ class GenCodeVisitor : public Visitor {
 private:
     unordered_map<string, int> functionLevels;
     Environment env;
-    int offsetActual = -8;
+    int offsetActual = 0;
     bool currentFunctionHasReturn = false;
     int labelCounter = 0;
     string currentFunction;
