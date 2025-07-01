@@ -30,27 +30,27 @@ int main(int argc, const char* argv[]) {
 
     string input_copy = input;
     Scanner scanner_test(input_copy.c_str());
-    test_scanner(&scanner_test);
-    cout << "Scanner exitoso" << endl;
-    cout << endl;
-    cout << "Iniciando parsing:" << endl;
+    //test_scanner(&scanner_test);
+    //cout << "Scanner exitoso" << endl;
+    //cout << endl;
+    //cout << "Iniciando parsing:" << endl;
     Parser parser(&scanner);
     try {
         Program* program = parser.parseProgram();
-        cout << "Parsing exitoso" << endl << endl;
+        //cout << "Parsing exitoso" << endl << endl;
 
 
-        cout << "Iniciando Visitor:" << endl;
-        PrintVisitor printVisitor;
+        //cout << "Iniciando Visitor:" << endl;
+        //PrintVisitor printVisitor;
         TypeEvalVisitor TypeEvalVisitor;
         GenCodeVisitor gencode;
-        cout << endl;
-        cout << "IMPRIMIR:" << endl;
-        printVisitor.visit(program);
-        cout  << endl;
-        cout << "VERIFICANDO Y EJECUTANDO:" << endl;
+        //cout << endl;
+        //cout << "IMPRIMIR:" << endl;
+        //printVisitor.visit(program);
+        //cout  << endl;
+        //cout << "VERIFICANDO Y EJECUTANDO:" << endl;
         TypeEvalVisitor.visit(program);
-        cout << "GENCODE:" << endl;
+        //cout << "GENCODE:" << endl;
         gencode.generar(program);
         delete program;
     } catch (const exception& e) {

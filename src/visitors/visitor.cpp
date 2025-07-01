@@ -14,7 +14,7 @@ void PrintVisitor::visit(Program* program) {
 }
 
 void PrintVisitor::visit(BlockStmt* blockStmt){
-    //TODO: Preguntarle al profe sobre la gramatica y el orden.
+
     if (blockStmt->firstVarDec) {
         if (blockStmt->vardeclist) blockStmt->vardeclist->accept(this);
         if (blockStmt->fundeclist) blockStmt->fundeclist->accept(this);
@@ -212,7 +212,7 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
             if (val <= INT32_MAX) {
                 env.update(varName, int32_t(val));
             } else {
-                cout << "Error: Desbordamiento al asignar en la variable 'integer': '" << varName << "'" << endl;
+                cerr << "Error: Desbordamiento al asignar en la variable 'integer': '" << varName << "'" << endl;
                 exit(1);
             }
         } else if (holds_alternative<int64_t>(value)) {
@@ -220,11 +220,11 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
             if (val >= INT32_MIN && val <= INT32_MAX) {
                 env.update(varName, int32_t(val));
             } else {
-                cout << "Error: Desbordamiento al asignar en la variable 'integer': '" << varName << "'" << endl;
+                cerr << "Error: Desbordamiento al asignar en la variable 'integer': '" << varName << "'" << endl;
                 exit(1);
             }
         } else {
-            cout << "Error: No se puede asignar un tipo boolean en la variable 'integer': '" << varName << "'" << endl;
+            cerr << "Error: No se puede asignar un tipo boolean en la variable 'integer': '" << varName << "'" << endl;
             exit(1);
         }
     } else if (type == "longint") {
@@ -235,10 +235,10 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
         } else if (holds_alternative<uint32_t>(value)) {
             env.update(varName, int64_t(get<uint32_t>(value)));
         } else {
-            cout << "Error: No se puede asignar un tipo boolean en la variable 'longint': '" << varName << "'" << endl;
+            cerr << "Error: No se puede asignar un tipo boolean en la variable 'longint': '" << varName << "'" << endl;
             exit(1);
         }
-    } else if (type == "unsigned") {
+    } else if (type == "unsignedint") {
         if (holds_alternative<uint32_t>(value)) {
             env.update(varName, value);
         } else if (holds_alternative<int32_t>(value)) {
@@ -246,7 +246,7 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
             if (val >= 0) {
                 env.update(varName, uint32_t(val));
             } else {
-                cout << "Error: No se puede asignar valor negativo en la variable 'unsigned': '" << varName << "'" << endl;
+                cerr << "Error: No se puede asignar valor negativo en la variable 'unsigned': '" << varName << "'" << endl;
                 exit(1);
             }
         } else if (holds_alternative<int64_t>(value)) {
@@ -254,26 +254,26 @@ void TypeEvalVisitor::checkAssignmentType(const string& varName, const string& t
             if (val >= 0 && val <= UINT32_MAX) {
                 env.update(varName, uint32_t(val));
             } else if (val<0) {
-                cout << "Error: No se puede asignar un valor negativo en la variable 'unsigned': '" << varName << "'" << endl;
+                cerr << "Error: No se puede asignar un valor negativo en la variable 'unsigned': '" << varName << "'" << endl;
                 exit(1);
             }
             else {
-                cout << "Error: Desbordamiento al asignar en la variable 'unsigned': '" << varName << "'" << endl;
+                cerr << "Error: Desbordamiento al asignar en la variable 'unsigned': '" << varName << "'" << endl;
                 exit(1);
             }
         } else {
-            cout << "Error: No se puede asignar un tipo boolean en la variable 'unsigned': '" << varName << "'" << endl;
+            cerr << "Error: No se puede asignar un tipo boolean en la variable 'unsigned': '" << varName << "'" << endl;
             exit(1);
         }
     } else if (type == "boolean") {
         if (holds_alternative<bool>(value)) {
             env.update(varName, value);
         } else {
-            cout << "Error: Se esperaba tipo boolean en asignación a variable '" << varName << "'" << endl;
+            cerr << "Error: Se esperaba tipo boolean en asignación a variable '" << varName << "'" << endl;
             exit(1);
         }
     } else {
-        cout << "Error: Tipo desconocido '" << type << "' en variable '" << varName << "'" << endl;
+        cerr << "Error: Tipo desconocido '" << type << "' en variable '" << varName << "'" << endl;
         exit(1);
     }
 }
@@ -300,7 +300,7 @@ void TypeEvalVisitor::visit(StatementList* statementList) {
 void TypeEvalVisitor::visit(VarDec* vd) {
     for (const auto& var : vd->vars) {
         if (env.exists_in_current_level(var)) {
-            cout << "Error: Variable '" << var << "' ya declarada en el mismo ámbito" << endl;
+            cerr << "Error: Variable '" << var << "' ya declarada en el mismo ámbito" << endl;
             exit(1);
         }
         env.add_var(var, vd->type);
@@ -315,7 +315,7 @@ void TypeEvalVisitor::visit(VarDecList* varDecList) {
 
 void TypeEvalVisitor::visit(FunDec* funcDec) {
     if (functions.count(funcDec->nombre)) {
-        cout << "Error: Funcion '" << funcDec->nombre << "' ya definida"<<endl;
+        cerr << "Error: Funcion '" << funcDec->nombre << "' ya definida"<<endl;
         exit(1);
     }
     functions[funcDec->nombre] = funcDec;
@@ -329,7 +329,7 @@ void TypeEvalVisitor::visit(FunList* funcDecList) {
 
 void TypeEvalVisitor::visit(AssignStmt* assign) {
     if (!env.check(assign->varName)) {
-        cout << "Error: Variable '" << assign->varName << "' no declarada" << std::endl;
+        cerr << "Error: Variable '" << assign->varName << "' no declarada" << std::endl;
         exit(1);
     }
 
@@ -346,18 +346,18 @@ void TypeEvalVisitor::visit(PrintStmt* print) {
     if (print->expressions) {
         print->expressions->accept(this);
         for (auto result:args) {
-            printValue(result);
-            cout<<" ";
+            //printValue(result);
+            //cout<<" ";
         }
     }
     args.clear();
-    cout << endl;
+    //cout << endl;
 }
 
 void TypeEvalVisitor::visit(IfStmt* ifStmt) {
     Value cond = ifStmt->condition->accept(this);
     if (!holds_alternative<bool>(cond)) {
-        cout << "Error: condición del while no es booleana" << std::endl;
+        cerr << "Error: condición del while no es booleana" << std::endl;
         exit(1);
     }
 
@@ -372,7 +372,7 @@ void TypeEvalVisitor::visit(WhileStmt* whileStmt) {
     while (true) {
         Value cond = whileStmt->condition->accept(this);
         if (!holds_alternative<bool>(cond)) {
-            cout << "Error: condición del while no es booleana" << std::endl;
+            cerr << "Error: condición del while no es booleana" << std::endl;
             exit(1);
         }
         if (!get<bool>(cond)) break;
@@ -382,7 +382,7 @@ void TypeEvalVisitor::visit(WhileStmt* whileStmt) {
 
 void TypeEvalVisitor::visit(ForStmt* forStmt) {
     if (!env.check(forStmt->varName)) {
-        cout << "Error: Variable de control '" << forStmt->varName << "' no declarada" << endl;
+        cerr << "Error: Variable de control '" << forStmt->varName << "' no declarada" << endl;
         exit(1);
     }
 
@@ -395,7 +395,7 @@ void TypeEvalVisitor::visit(ForStmt* forStmt) {
     optional<int64_t> maybeEnd = extractInt64(end);
 
     if (!maybeStart || !maybeEnd) {
-        cout << "Error: Los límites del for no son numéricos válidos." << endl;
+        cerr << "Error: Los límites del for no son numéricos válidos." << endl;
         exit(1);
     }
 
@@ -404,7 +404,7 @@ void TypeEvalVisitor::visit(ForStmt* forStmt) {
 
     if (forStmt->isDownto) {
         if (i < to) {
-            cout << "Error: En 'downto', el valor inicial (" << i << ") debe ser mayor o igual al final (" << to << ")" << endl;
+            cerr << "Error: En 'downto', el valor inicial (" << i << ") debe ser mayor o igual al final (" << to << ")" << endl;
             exit(1);
         }
         for (; i >= to; --i) {
@@ -413,7 +413,7 @@ void TypeEvalVisitor::visit(ForStmt* forStmt) {
         }
     } else {
         if (i > to) {
-            cout << "Error: En 'to', el valor inicial (" << i << ") debe ser menor o igual al final (" << to << ")" << endl;
+            cerr << "Error: En 'to', el valor inicial (" << i << ") debe ser menor o igual al final (" << to << ")" << endl;
             exit(1);
         }
         for (; i <= to; ++i) {
@@ -426,14 +426,14 @@ void TypeEvalVisitor::visit(ForStmt* forStmt) {
 
 void TypeEvalVisitor::visit(ProcedureCall* procCall) {
     if (!functions.count(procCall->funcName)) {
-        cout << "Error: procedimiento '" << procCall->funcName << "' no declarado" << endl;
+        cerr << "Error: procedimiento '" << procCall->funcName << "' no declarado" << endl;
         exit(1);
     }
 
     FunDec* func = functions[procCall->funcName];
 
     if (func->returnType != "void") {
-        cout << "Error: La funcion '" << func->nombre << "' debe usarse solo en expresiones" << endl;
+        cerr << "Error: La funcion '" << func->nombre << "' debe usarse solo en expresiones" << endl;
         exit(1);
     }
 
@@ -442,7 +442,7 @@ void TypeEvalVisitor::visit(ProcedureCall* procCall) {
     }
 
     if (args.size() != func->tipos.size()) {
-        cout << "Error: número incorrecto de argumentos para '" << procCall->funcName << "'" << endl;
+        cerr << "Error: número incorrecto de argumentos para '" << procCall->funcName << "'" << endl;
         exit(1);
     }
     env.add_level();
@@ -479,13 +479,13 @@ Value TypeEvalVisitor::visit(NumberExp* number) {
         return val;
 
     } catch (const std::out_of_range&) {
-        cout << "Error: Número literal fuera del rango de 'longint': " << number->num << endl;
+        cerr << "Error: Número literal fuera del rango de 'longint': " << number->num << endl;
         exit(1);
     } catch (const std::invalid_argument&) {
-        cout << "Error: Número inválido (no numérico) '" << number->num << "'" << endl;
+        cerr << "Error: Número inválido (no numérico) '" << number->num << "'" << endl;
         exit(1);
     } catch (...) {
-        cout << "Error: Fallo inesperado al procesar número '" << number->num << "'" << endl;
+        cerr << "Error: Fallo inesperado al procesar número '" << number->num << "'" << endl;
         exit(1);
     }
 }
@@ -497,7 +497,7 @@ Value TypeEvalVisitor::visit(BoolExp* boolExp) {
 
 Value TypeEvalVisitor::visit(IdentifierExp* id) {
     if (!env.check(id->name)) {
-        cout << "Error: Variable '" << id->name << "' no declarada" << endl;
+        cerr << "Error: Variable '" << id->name << "' no declarada" << endl;
         exit(1);
     }
     return env.lookup(id->name);
@@ -510,7 +510,7 @@ Value TypeEvalVisitor::visit(UnaryExp* unary) {
         if (holds_alternative<bool>(val)) {
             return !get<bool>(val);
         }
-        cout << "Error: 'not' requiere una expresión booleana" << endl;
+        cerr << "Error: 'not' requiere una expresión booleana" << endl;
         exit(1);
     }
 
@@ -519,10 +519,10 @@ Value TypeEvalVisitor::visit(UnaryExp* unary) {
         if (holds_alternative<int64_t>(val)) return -get<int64_t>(val);
         // unsigned no debe permitir '-'
         if (holds_alternative<uint32_t>(val)) {
-            cout << "Error: '-' no puede aplicarse a 'unsigned'" << endl;
+            cerr << "Error: '-' no puede aplicarse a 'unsigned'" << endl;
             exit(1);
         }
-        cout << "Error: '-' sólo puede aplicarse a valores numéricos" << endl;
+        cerr << "Error: '-' sólo puede aplicarse a valores numéricos" << endl;
         exit(1);
     }
 
@@ -530,11 +530,11 @@ Value TypeEvalVisitor::visit(UnaryExp* unary) {
         if (holds_alternative<int32_t>(val)) return get<int32_t>(val);
         if (holds_alternative<int64_t>(val)) return get<int64_t>(val);
         if (holds_alternative<uint32_t>(val)) return get<uint32_t>(val);
-        cout << "Error: '+' sólo puede aplicarse a valores numéricos" << endl;
+        cerr << "Error: '+' sólo puede aplicarse a valores numéricos" << endl;
         exit(1);
     }
 
-    cout << "Error: Operador unario desconocido '" << unary->op << "'" << endl;
+    cerr << "Error: Operador unario desconocido '" << unary->op << "'" << endl;
     exit(1);
 }
 
@@ -546,7 +546,7 @@ Value TypeEvalVisitor::visit(BinaryExp* binary) {
 
     if (op == "+" || op == "-" || op == "*" || op == "div" || op == "mod") {
         if (!l || !r) {
-            cout << "Error: operación aritmética requiere valores numéricos" << endl;
+            cerr << "Error: operación aritmética requiere valores numéricos" << endl;
             exit(1);
         }
 
@@ -555,39 +555,39 @@ Value TypeEvalVisitor::visit(BinaryExp* binary) {
 
         if (op == "+") {
             if ((b > 0 && a > INT64_MAX - b) || (b < 0 && a < INT64_MIN - b)) {
-                cout << "Error: desbordamiento en suma" << endl;
+                cerr << "Error: desbordamiento en suma" << endl;
                 exit(1);
             }
             return a + b;
         }
         if (op == "-") {
             if ((b < 0 && a > INT64_MAX + b) || (b > 0 && a < INT64_MIN + b)) {
-                cout << "Error: desbordamiento en resta" << endl;
+                cerr << "Error: desbordamiento en resta" << endl;
                 exit(1);
             }
             return a - b;
         }
         if (op == "*") {
             if (a != 0 && (a > INT64_MAX / b || a < INT64_MIN / b)) {
-                cout << "Error: desbordamiento en multiplicación" << endl;
+                cerr << "Error: desbordamiento en multiplicación" << endl;
                 exit(1);
             }
             return a * b;
         }
         if (op == "div") {
             if (b == 0) {
-                cout << "Error: división por cero" << endl;
+                cerr << "Error: división por cero" << endl;
                 exit(1);
             }
             if (a == INT64_MIN && b == -1) {
-                cout << "Error: desbordamiento en división" << endl;
+                cerr << "Error: desbordamiento en división" << endl;
                 exit(1);
             }
             return a / b;
         }
         if (op == "mod") {
             if (b == 0) {
-                cout << "Error: módulo por cero" << endl;
+                cerr << "Error: módulo por cero" << endl;
                 exit(1);
             }
             return a % b;
@@ -596,7 +596,7 @@ Value TypeEvalVisitor::visit(BinaryExp* binary) {
 
     if (op == "and" || op == "or") {
         if (!holds_alternative<bool>(lhs) || !holds_alternative<bool>(rhs)) {
-            cout << "Error: operación lógica requiere booleanos" << endl;
+            cerr << "Error: operación lógica requiere booleanos" << endl;
             exit(1);
         }
         if (op == "and") return get<bool>(lhs) && get<bool>(rhs);
@@ -604,7 +604,7 @@ Value TypeEvalVisitor::visit(BinaryExp* binary) {
     }
 
     if (!l || !r) {
-        cout << "Error: comparación requiere valores numéricos" << endl;
+        cerr << "Error: comparación requiere valores numéricos" << endl;
         exit(1);
     }
     if (op == "=") return *l == *r; //la igualdad entre variabkles solo defini con numeros
@@ -614,7 +614,7 @@ Value TypeEvalVisitor::visit(BinaryExp* binary) {
     if (op == ">") return *l > *r;
     if (op == ">=") return *l >= *r;
 
-    cout << "Error: operador binario desconocido '" << op << "'" << endl;
+    cerr << "Error: operador binario desconocido '" << op << "'" << endl;
     exit(1);
 }
 
@@ -623,14 +623,14 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
 
     // Verificación de existencia
     if (!functions.count(name)) {
-        cout << "Error: Función '" << name << "' no declarada" << endl;
+        cerr << "Error: Función '" << name << "' no declarada" << endl;
         exit(1);
     }
 
     FunDec* func = functions[name];
 
     if (func->returnType == "void") {
-        cout << "Error: El procedimiento '" << name << "' no retorna valor y no puede usarse en una expresión" << endl;
+        cerr << "Error: El procedimiento '" << name << "' no retorna valor y no puede usarse en una expresión" << endl;
         exit(1);
     }
 
@@ -640,7 +640,7 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
     }
 
     if (args.size() != func->tipos.size()) {
-        cout << "Error: número incorrecto de argumentos para '" << name << "'" << endl;
+        cerr << "Error: número incorrecto de argumentos para '" << name << "'" << endl;
         exit(1);
     }
 
@@ -665,13 +665,13 @@ Value TypeEvalVisitor::visit(FunctionCallExp* funcCall) {
 
     // Verificar si se retornó explícitamente
     if (!functionReturnedStack.top()) {
-        cout << "Error: la función '" << name << "' no retornó ningún valor" << endl;
+        cerr << "Error: la función '" << name << "' no retornó ningún valor" << endl;
         exit(1);
     }
 
     // Obtener el valor de retorno
     if (!env.check(name)) {
-        cout << "Error interno: la variable de retorno '" << name << "' no existe en el entorno" << endl;
+        cerr << "Error interno: la variable de retorno '" << name << "' no existe en el entorno" << endl;
         exit(1);
     }
 
@@ -868,31 +868,29 @@ Value GenCodeVisitor::visit(BoolExp* e) {
 }
 
 Value GenCodeVisitor::visit(BinaryExp* e) {
-    if (e->op == DIV_OP || e->op == MOD_OP) {
-        // 1. Evaluar divisor (right), guardarlo en pila
-        e->right->accept(this);     // → %rax = divisor
-        cout << " pushq %rax\n";    // apilar divisor
+    if (e->op == MOD_OP || e->op == DIV_OP) {
+        // Evaluar left
+        e->left->accept(this); // %rax ← left
+        cout << " pushq %rax\n";
 
-        // 2. Evaluar dividendo (left)
-        e->left->accept(this);      // → %rax = dividendo
-
-        // 3. Preparar para divisiones: sign-extend %rax → %rdx:%rax
-        cout << " cqto\n";
-
-        // 4. Recuperar divisor en %rcx
-        cout << " popq %rax\n";
+        // Evaluar right
+        e->right->accept(this); // %rax ← right
         cout << " movq %rax, %rcx\n";
 
-        // 5. Dividir: %rax = cociente, %rdx = residuo
+        // Restaurar left en %rax
+        cout << " popq %rax\n";
+
+        // Sign extend
+        cout << " cqto\n";
         cout << " idivq %rcx\n";
 
-        // 6. Si es MOD, mover residuo a %rax
         if (e->op == MOD_OP) {
-            cout << " movq %rdx, %rax\n";
+            cout << " movq %rdx, %rax\n";  // %rax ← residuo
         }
 
         return 0;
     }
+
     // Caso general para los demás operadores
     e->left->accept(this);
     cout << " pushq %rax\n"; // guarda left

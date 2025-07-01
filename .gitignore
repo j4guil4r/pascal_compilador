@@ -3,3 +3,5 @@ cmake-build-*/
 *.exe
 *.o
 *.obj
+/.venv/
+/test/asm/
