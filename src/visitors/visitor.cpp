@@ -882,31 +882,29 @@ Value GenCodeVisitor::visit(BoolExp* e) {
 }
 
 Value GenCodeVisitor::visit(BinaryExp* e) {
-    if (e->op == DIV_OP || e->op == MOD_OP) {
-        // 1. Evaluar divisor (right), guardarlo en pila
-        e->right->accept(this);     // → %rax = divisor
-        cout << " pushq %rax\n";    // apilar divisor
+    if (e->op == MOD_OP || e->op == DIV_OP) {
+        // Evaluar left
+        e->left->accept(this); // %rax ← left
+        cout << " pushq %rax\n";
 
-        // 2. Evaluar dividendo (left)
-        e->left->accept(this);      // → %rax = dividendo
-
-        // 3. Preparar para divisiones: sign-extend %rax → %rdx:%rax
-        cout << " cqto\n";
-
-        // 4. Recuperar divisor en %rcx
-        cout << " popq %rax\n";
+        // Evaluar right
+        e->right->accept(this); // %rax ← right
         cout << " movq %rax, %rcx\n";
 
-        // 5. Dividir: %rax = cociente, %rdx = residuo
+        // Restaurar left en %rax
+        cout << " popq %rax\n";
+
+        // Sign extend
+        cout << " cqto\n";
         cout << " idivq %rcx\n";
 
-        // 6. Si es MOD, mover residuo a %rax
         if (e->op == MOD_OP) {
-            cout << " movq %rdx, %rax\n";
+            cout << " movq %rdx, %rax\n";  // %rax ← residuo
         }
 
         return 0;
     }
+
     // Caso general para los demás operadores
     e->left->accept(this);
     cout << " pushq %rax\n"; // guarda left
